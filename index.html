@@ -161,6 +161,16 @@ table.t td{padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:mi
 .dias-sel span{display:inline-block;min-width:44px;text-align:center;padding:7px 8px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:13px}
 .dias-sel input:checked+span{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
 .dias-sel input:focus-visible+span{outline:2px solid var(--primary);outline-offset:2px}
+.fecha-ev{min-width:42px;text-align:center;background:var(--surface2);border-radius:10px;padding:4px 6px;line-height:1.1}
+.fecha-ev b{display:block;font-size:18px;color:var(--primary)} .fecha-ev span{font-size:11px;text-transform:uppercase;color:var(--muted)}
+.fecha-ev.grande{min-width:52px;padding:6px 8px} .fecha-ev.grande b{font-size:22px}
+.mes-cal{text-transform:capitalize;margin:16px 0 8px;color:var(--muted);font-size:14px;letter-spacing:.04em}
+.cumple{display:flex;gap:12px;align-items:center;background:linear-gradient(135deg,#fff4d6,#ffe0e1);border:0;color:#3a2a00}
+.sin-conexion{position:fixed;left:0;right:0;top:0;z-index:60;background:var(--warn);color:#fff;text-align:center;font-size:13px;font-weight:600;padding:6px 10px}
+.tabla-rep{overflow-x:auto} .tabla-rep table{width:100%;border-collapse:collapse;font-size:13px}
+.tabla-rep th,.tabla-rep td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tabla-rep th{color:var(--muted);font-weight:600;font-size:12px}
+@media print{ .top,.nav,.no-print,.reproductor,.toast{display:none!important} body{background:#fff} .wrap{padding:0!important;max-width:none} .card{box-shadow:none;break-inside:avoid} }
 </style>
 </head>
 <body>
@@ -195,6 +205,11 @@ var ICON = {
   musica:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>',
   mas:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
   recordatorios:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
+  calendario:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>',
+  sermones:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>',
+  miplan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/><path d="m9 10 2 2 4-4"/></svg>',
+  testimonios:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>',
+  reporte:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   cruz:'<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v18M6 9h12"/></svg>'
 };
 
@@ -273,7 +288,7 @@ document.addEventListener('visibilitychange',function(){ if(document.visibilityS
 function arrancar(){
   S.token = ls('tk');
   if(S.token){
-    llamar('yo').then(function(yo){ S.yo=yo; entrar(); }).catch(function(){ pantallaLogin(); });
+    llamar('yo').then(function(yo){ S.yo=yo; entrar(); }).catch(function(e){ var y=null; try{ y=JSON.parse(ls('yoCache')||'null'); }catch(x){} if(y && /conexi/i.test(e&&e.message||'')){ S.yo=y; avisoSinConexion(); entrar(); } else pantallaLogin(); });
   } else {
     llamar('estado').then(function(e){ if(!e.hayUsuarios) pantallaPrimerAdmin(); else pantallaLogin(); }).catch(function(e){ $('#app').innerHTML='<div class="center"><div class="card login"><h2>No se pudo conectar</h2><p class="muted">'+esc(e.message)+'</p><button class="btn primary block" onclick="location.reload()">Reintentar</button></div></div>'; });
   }
@@ -282,7 +297,7 @@ function salir(silencioso){
   enviarTiempo();
   desconectarChat(); cerrarReproductor(); S.chatConv=null;
   if(!silencioso && S.token) llamar('cerrarSesion').catch(function(){});
-  ls('tk',null); S.token=null; S.yo=null; S.inicio=null; Reloj.tipo=null; S.vista='inicio'; S.bibliaModo=null; S.librosLista=null; S.leidosHoy={};
+  ls('tk',null); ls('yoCache',null); S.token=null; S.yo=null; S.inicio=null; Reloj.tipo=null; S.vista='inicio'; S.bibliaModo=null; S.librosLista=null; S.leidosHoy={};
   $$('.modal').forEach(function(m){ m.remove(); });
   pantallaLogin();
 }
@@ -318,6 +333,7 @@ function pantallaCambioObligatorio(){
 
 function entrar(){
   if(S.yo.debeCambiar){ pantallaCambioObligatorio(); return; }
+  try{ ls('yoCache', JSON.stringify(S.yo)); }catch(e){}
   var tabs=[['inicio','Inicio'],['biblia','Biblia'],['chat','Chat'],['musica','Alabanzas'],['mas','Más']];
   $('#app').innerHTML='<div class="top"><div class="in"><img class="minilogo" src="'+LOGO+'" alt=""><div class="brand">VIVIENDO POR FE<small>Iglesia Bíblica · El Viejo</small></div><button class="avatar" id="perfilBtn" title="Mi cuenta">'+esc(iniciales(S.yo.nombre))+'</button></div></div>'+
     '<main class="wrap" id="vista"></main>'+
@@ -333,7 +349,7 @@ function ir(v, opts){
   marcarNav(v);
   Reloj.tipo = v==='biblia'?'biblia': v==='libros'?null : null;
   var el=$('#vista'); el.innerHTML='<div class="spin"></div>';
-  ({inicio:vInicio,biblia:vBiblia,libros:vLibros,planes:vPlanes,oracion:vOracion,grupo:vGrupo,admin:vAdmin,chat:vChat,musica:vMusica,recordatorios:vRecordatorios}[v]||vInicio)(el, opts||{});
+  ({inicio:vInicio,biblia:vBiblia,libros:vLibros,planes:vPlanes,oracion:vOracion,grupo:vGrupo,admin:vAdmin,chat:vChat,musica:vMusica,recordatorios:vRecordatorios,calendario:vCalendario,sermones:vSermones,miplan:vMiPlan,testimonios:vTestimonios,reporte:vReporte}[v]||vInicio)(el, opts||{});
 }
 
 // ─────────────────────────── Perfil ───────────────────────────
@@ -345,6 +361,7 @@ function abrirPerfil(){
     '<label class="f"><span>Nombre</span><input type="text" name="n" value="'+esc(y.nombre)+'"></label>'+
     '<label class="f"><span>Usuario</span><input type="text" name="u" autocapitalize="none" value="'+esc(y.usuario)+'"></label>'+
     '<button class="btn">Guardar</button></form>'+
+    cumpleFormHTML()+
     '<div class="sep"></div><form id="fp"><h3>Cambiar contraseña</h3>'+
     '<label class="f"><span>Contraseña actual</span><input type="password" name="a" autocomplete="current-password" required></label>'+
     '<label class="f"><span>Nueva contraseña</span><input type="password" name="b" autocomplete="new-password" minlength="6" required></label>'+
@@ -354,6 +371,7 @@ function abrirPerfil(){
     $('#fu',m).onsubmit=function(ev){ ev.preventDefault(); llamar('cambiarUsuario',{usuario:this.u.value,nombre:this.n.value}).then(function(yo){ S.yo=yo; $('#perfilBtn').textContent=iniciales(yo.nombre); toast('Datos guardados. Su nuevo usuario es '+yo.usuario+'.'); }).catch(err); };
     $('#fp',m).onsubmit=function(ev){ ev.preventDefault(); var f=this; llamar('cambiarClave',{actual:f.a.value,nueva:f.b.value}).then(function(){ f.reset(); toast('Contraseña cambiada.'); }).catch(err); };
     $('#salirBtn',m).onclick=function(){ m.remove(); salir(); };
+    enlazarCumpleForm(m);
   });
 }
 
@@ -362,12 +380,12 @@ function semanaHTML(semana, mini){
   return '<div class="week'+(mini?' mini':'')+'">'+semana.map(function(d,i){ return '<div class="d '+(d.leyo?'si':'')+(d.futuro?' fut':'')+'" title="'+d.fecha+'"><b></b>'+(mini?'':DIAS[i])+'</div>'; }).join('')+'</div>';
 }
 function vInicio(el){
-  Promise.all([llamar('inicio'), cargarListaLibros()]).then(function(r){
+  Promise.all([conCache('inicio-'+S.yo.id, llamar('inicio')), cargarListaLibros()]).then(function(r){
     var d=r[0]; S.inicio=d; S.yo=d.yo;
     var s=d.semana, h=new Date().getHours();
     var saludo = h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches';
     var html='<h1 style="margin-bottom:4px">'+saludo+', '+esc(d.yo.nombre.split(' ')[0])+'</h1><p class="muted small" style="margin:0 0 14px">'+(d.yo.grupo?'Grupo: '+esc(d.yo.grupo)+(d.horario?' · '+esc(d.horario.texto.replace(/^Los /,'los ')):''):'Aún no está en un grupo pequeño')+'</p>';
-    html+=versiculoHTML(d.versiculo)+invitacionPushHTML();
+    html+=(d.esMiCumple?extrasInicioHTML({esMiCumple:true,yo:d.yo}):'')+versiculoHTML(d.versiculo)+invitacionPushHTML()+extrasInicioHTML({cumplesHoy:d.cumplesHoy,yo:d.yo,eventos:d.eventos,planPersonal:d.planPersonal,testimoniosNuevos:d.testimoniosNuevos});
     html+=avisosHTML(d.avisos||[]);
     html+='<div class="card"><div class="row" style="margin-bottom:10px"><h2 class="grow">Mi semana</h2>'+(d.racha>1?'<span class="chip ok">'+d.racha+' días seguidos</span>':'')+'</div>'+semanaHTML(s.semana)+
       '<div class="stats" style="margin-top:14px"><div class="stat"><b>'+s.diasBiblia+'/7</b><span>días en la Biblia</span></div><div class="stat"><b>'+s.capitulos+'</b><span>capítulos</span></div><div class="stat"><b>'+s.minutos.total+'</b><span>min de estudio</span></div></div>'+
@@ -386,6 +404,7 @@ function vInicio(el){
     el.innerHTML=html;
     $('#seguirBtn').onclick=function(){ if(d.ultimoCapitulo) S.lector={libro:d.ultimoCapitulo.libro,cap:d.ultimoCapitulo.cap}; ir('biblia',{leer:true}); };
     enlazarInicioRecordatorios(el, d);
+    enlazarInicioExtras(el, d);
     enlazarPlan(el);
     enlazarAvisos(el, function(){ ir('inicio'); });
     if($('#irOracion',el)) $('#irOracion',el).onclick=function(){ ir('oracion'); };
@@ -541,7 +560,7 @@ function buscar(q, cont){
 // ─────────────────────────── Biblioteca PDF ───────────────────────────
 function cargarListaLibros(forzar){
   if(S.librosLista && !forzar) return Promise.resolve(S.librosLista);
-  return llamar('libros').then(function(l){ S.librosLista=l; return l; });
+  return conCache('libros-'+(S.yo?S.yo.id:''), llamar('libros')).then(function(l){ S.librosLista=l; return l; });
 }
 function vLibros(el){
   Reloj.tipo=null;
@@ -769,7 +788,7 @@ function pintarPanelGrupo(el, d){
   var prom=n? (d.miembros.reduce(function(s,m){return s+m.diasBiblia;},0)/n).toFixed(1):'0';
   var html='<div class="row" style="margin-bottom:12px"><div class="grow"><h1>'+esc(d.grupo.nombre)+'</h1><div class="small muted">'+n+' miembro'+(n===1?'':'s')+'</div></div><button class="btn primary" id="agregar">+ Miembro</button></div>'+
     '<div class="row wrap2" style="gap:8px;margin-bottom:14px"><button class="btn grow" id="tomarAsis">Tomar asistencia</button><button class="btn grow" id="avisoGrupo">Aviso al grupo</button></div>'+
-    avisosHTML(d.avisos||[], true)+horarioGrupoHTML(d);
+    avisosHTML(d.avisos||[], true)+horarioGrupoHTML(d)+seguimientoGrupoHTML(d);
   html+='<div class="card"><h2 style="margin-bottom:10px">Esta semana</h2><div class="stats"><div class="stat"><b>'+leyeron+'/'+n+'</b><span>leyeron la Biblia</span></div><div class="stat"><b>'+prom+'</b><span>días promedio</span></div><div class="stat"><b>'+(d.reuniones||0)+'</b><span>reuniones en 30 días</span></div></div></div>';
   d.planes.forEach(function(p){
     var hechos=d.miembros.reduce(function(s,m){ var x=m.planes.filter(function(y){return y.asignacionId===p.asignacionId;})[0]; return s+(x?x.hechos:0); },0);
@@ -842,6 +861,7 @@ function adminResumen(c){
     var i=d.iglesia;
     var h='<div class="card"><h2 style="margin-bottom:10px">Toda la iglesia · esta semana</h2><div class="stats"><div class="stat"><b>'+i.leyeronSemana+'/'+i.miembros+'</b><span>leyeron la Biblia</span></div><div class="stat"><b>'+i.promedioDias+'</b><span>días promedio</span></div><div class="stat"><b>'+d.grupos.length+'</b><span>grupos</span></div></div>'+
       (d.sinGrupo?'<p class="small" style="margin:10px 0 0"><span class="chip warn">'+d.sinGrupo+' sin grupo</span> <button class="link small" id="verSin">Asignarlos</button></p>':'')+'</div>';
+    h+=resumenExtrasHTML(d);
     if(!d.grupos.length) h+='<div class="card empty">Aún no hay grupos pequeños. <button class="link" id="crearG">Crear el primero</button></div>';
     d.grupos.forEach(function(g){
       h+='<div class="card" style="cursor:pointer" data-g="'+g.id+'"><div class="row"><div class="grow"><h2>'+esc(g.nombre)+'</h2><div class="tiny muted">Líder: '+esc(g.lider||'sin asignar')+' · '+g.miembros+' miembros</div></div><span class="chip '+(g.miembros&&g.leyeronSemana/g.miembros>=0.5?'ok':'warn')+'">'+g.leyeronSemana+'/'+g.miembros+' leyeron</span></div>'+
@@ -983,11 +1003,11 @@ function vOracion(el, o){
 }
 function gestionarPeticion(p, tab){
   var m=modal('<h2>Petición</h2><p class="small" style="white-space:pre-wrap">'+esc(p.texto)+'</p>'+
-    (p.estado==='activa'?'<form id="fcont"><label class="f"><span>¿Cómo respondió Dios? (opcional)</span><textarea name="x" maxlength="1000" placeholder="Comparta el testimonio con su grupo"></textarea></label><button class="btn primary block">Marcar como contestada</button></form>'
+    (p.estado==='activa'?'<form id="fcont"><label class="f"><span>¿Cómo respondió Dios? (opcional)</span><textarea name="x" maxlength="1000" placeholder="Comparta el testimonio con su grupo"></textarea></label>'+(p.mia||S.yo.rol==='admin'?'<label class="check small" style="margin:0 0 10px"><input type="checkbox" name="comp"> <span>Compartir este testimonio con toda la iglesia (el pastor lo revisa antes de publicarlo)</span></label>':'')+'<button class="btn primary block">Marcar como contestada</button></form>'
       :'<button class="btn block" id="reabrir">Volver a activa</button>')+
     '<div class="sep"></div><div class="row"><button class="btn danger" id="elimP">Eliminar</button><span class="grow"></span><button class="btn ghost" data-cerrar>Cerrar</button></div>');
   var listo=function(t){ return function(){ m.remove(); ir('oracion',{tab:t}); }; };
-  if($('#fcont',m)) $('#fcont',m).onsubmit=function(ev){ ev.preventDefault(); llamar('actualizarPeticion',{id:p.id,contestada:true,testimonio:this.x.value}).then(function(){ toast('¡Gloria a Dios!'); listo('contestada')(); }).catch(err); };
+  if($('#fcont',m)) $('#fcont',m).onsubmit=function(ev){ ev.preventDefault(); llamar('actualizarPeticion',{id:p.id,contestada:true,testimonio:this.x.value,compartir:!!(this.comp&&this.comp.checked)}).then(function(){ toast('¡Gloria a Dios!'); listo('contestada')(); }).catch(err); };
   if($('#reabrir',m)) $('#reabrir',m).onclick=function(){ llamar('actualizarPeticion',{id:p.id,reabrir:true}).then(listo('activa')).catch(err); };
   $('#elimP',m).onclick=function(){ if(confirm('¿Eliminar esta petición?')) llamar('actualizarPeticion',{id:p.id,eliminar:true}).then(listo(tab)).catch(err); };
 }
@@ -1104,11 +1124,11 @@ function adminAjustes(c){
 }
 
 // ─────────────────────────── Navegación con menú "Más" ───────────────────────────
-var MAS = ['libros','planes','oracion','grupo','admin','recordatorios'];
+var MAS = ['libros','planes','oracion','grupo','admin','recordatorios','calendario','sermones','miplan','testimonios','reporte'];
 function marcarNav(v){ $$('.nav button').forEach(function(b){ b.classList.toggle('on', b.dataset.v===v || (b.dataset.v==='mas' && MAS.indexOf(v)>=0)); }); }
 function abrirMas(){
-  var items=[['libros','Biblioteca','Libros en PDF para estudiar'],['planes','Planes','Planes de estudio de los grupos'],['oracion','Oración','Peticiones de su grupo'],['recordatorios','Recordatorios','Versículo diario, lectura y reunión del grupo']];
-  if(S.yo.rol==='lider' || S.yo.rol==='admin') items.push(['grupo','Grupos','Avance, asistencia y avisos']);
+  var items=[['calendario','Calendario','Cultos y actividades de la iglesia'],['sermones','Predicaciones','Mensajes para escuchar y repasar'],['miplan','Mi plan de lectura','La Biblia en un año y más'],['libros','Biblioteca','Libros en PDF para estudiar'],['planes','Planes','Planes de estudio de los grupos'],['oracion','Oración','Peticiones de su grupo'],['testimonios','Testimonios','Lo que Dios ha hecho entre nosotros'],['recordatorios','Recordatorios','Versículo diario, lectura y reunión del grupo']];
+  if(S.yo.rol==='lider' || S.yo.rol==='admin') items.push(['grupo','Grupos','Avance, asistencia y avisos'],['reporte','Reporte mensual','Asistencia y lectura para imprimir']);
   if(S.yo.rol==='admin') items.push(['admin','Administración','Usuarios, grupos, avisos y ajustes']);
   var m=modal('<div class="row" style="margin-bottom:6px"><h2 class="grow">Más</h2><button class="btn ghost" data-cerrar>Cerrar</button></div><div class="list">'+
     items.map(function(i){ return '<button class="mas-item" data-ir="'+i[0]+'"><span class="mas-ic">'+ICON[i[0]]+'</span><span class="grow" style="text-align:left"><b>'+i[1]+'</b><span class="tiny muted" style="display:block">'+i[2]+'</span></span><span class="muted">›</span></button>'; }).join('')+'</div>');
@@ -1608,6 +1628,284 @@ function formHorario(grupo, h){
     llamar('guardarHorario',{grupoId:grupo.id,dias:dias,hora:f.hora.value,lugar:f.lugar.value,avisoMin:+f.aviso.value})
     .then(function(r){ m.remove(); toast('Horario guardado: '+r.texto); ir('grupo',{grupoId:grupo.id}); }).catch(function(e){ b.disabled=false; err(e); }); };
   if($('#quitarH',m)) $('#quitarH',m).onclick=function(){ if(confirm('¿Quitar el horario de reunión? Ya no se enviarán recordatorios del grupo.')) llamar('guardarHorario',{grupoId:grupo.id,quitar:true}).then(function(){ m.remove(); ir('grupo',{grupoId:grupo.id}); }).catch(err); };
+}
+
+
+// ─────────────────────────── v7: calendario, predicaciones, plan personal, cumpleaños, testimonios, reporte ───────────────────────────
+DESTINOS_AVISO.calendario='calendario'; DESTINOS_AVISO.miplan='miplan'; DESTINOS_AVISO.grupo='grupo';
+var MESES_CORTOS=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+var MESES_LARGOS=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function fechaLarga(f){ var d=new Date(f+'T12:00:00'); return NOMBRE_DIA[d.getDay()].toLowerCase()+' '+d.getDate()+' de '+MESES_LARGOS[d.getMonth()]; }
+function hora12(h){ if(!h) return ''; var p=h.split(':'), n=+p[0]; return (n%12||12)+':'+p[1]+(n<12?' a. m.':' p. m.'); }
+
+// ── Sin conexión: se muestra lo último guardado en el teléfono ──
+function avisoSinConexion(){
+  if($('#sinConexion')) return;
+  var b=document.createElement('div'); b.id='sinConexion'; b.className='sin-conexion'; b.textContent='Sin conexión: está viendo lo último guardado en su teléfono.';
+  document.body.appendChild(b);
+}
+window.addEventListener('online', function(){ var b=$('#sinConexion'); if(b) b.remove(); });
+function conCache(clave, promesa){
+  return promesa.then(function(d){ DB.set('c-'+clave, d); var b=$('#sinConexion'); if(b) b.remove(); return d; })
+    .catch(function(e){ return DB.get('c-'+clave).then(function(v){ if(v===undefined || !/conexi/i.test(e.message||'')) throw e; avisoSinConexion(); return v; }); });
+}
+
+// ── Inicio: cumpleaños, próximos eventos, plan personal y testimonios ──
+function extrasInicioHTML(d){
+  var h='';
+  if(d.esMiCumple) h+='<div class="card cumple"><div style="font-size:30px">🎂</div><div class="grow"><b>¡Feliz cumpleaños, '+esc(d.yo.nombre.split(' ')[0])+'!</b><div class="small">«Jehová te bendiga, y te guarde.» Números 6:24</div></div></div>';
+  var otros=(d.cumplesHoy||[]).filter(function(c){ return c.id!==d.yo.id; });
+  if(otros.length) h+='<div class="card flat"><div class="row"><span style="font-size:22px">🎉</span><div class="grow small">Hoy cumple años: <b>'+otros.map(function(c){ return esc(c.nombre); }).join(', ')+'</b>. ¡Envíele un saludo!</div></div></div>';
+  if(d.eventos && d.eventos.length){
+    h+='<div class="card"><div class="row" style="margin-bottom:6px"><h2 class="grow">Próximamente</h2><button class="link small" id="verCal">Ver calendario</button></div><div class="list">'+d.eventos.map(eventoFilaHTML).join('')+'</div></div>';
+  }
+  if('planPersonal' in d) h+=planPersonalInicioHTML(d.planPersonal);
+  if(d.testimoniosNuevos) h+='<div class="card flat"><div class="row"><span class="mas-ic">'+ICON.testimonios+'</span><div class="grow small">'+d.testimoniosNuevos+' testimonio'+(d.testimoniosNuevos===1?'':'s')+' nuevo'+(d.testimoniosNuevos===1?'':'s')+' esta semana</div><button class="btn sm" id="verTest">Leer</button></div></div>';
+  return h;
+}
+function eventoFilaHTML(e){
+  var f=new Date(e.fecha+'T12:00:00');
+  return '<div class="row evento"><div class="fecha-ev"><b>'+f.getDate()+'</b><span>'+MESES_CORTOS[f.getMonth()]+'</span></div><div class="grow"><b>'+esc(e.titulo)+'</b><div class="tiny muted">'+[e.hora?hora12(e.hora):'',e.lugar?esc(e.lugar):'',e.grupo?esc(e.grupo):''].filter(String).join(' · ')+'</div></div></div>';
+}
+function enlazarInicioExtras(el, d){
+  if($('#verCal',el)) $('#verCal',el).onclick=function(){ ir('calendario'); };
+  if($('#verTest',el)) $('#verTest',el).onclick=function(){ ir('testimonios'); };
+  if($('#empezarPlan',el)) $('#empezarPlan',el).onclick=function(){ ir('miplan'); };
+  enlazarPlanPersonal(el, function(){ ir('inicio'); });
+}
+
+// ── Plan de lectura personal ──
+var PLANES_LECTURA={ biblia365:{titulo:'La Biblia en un año',libros:[1,66],dias:365,desc:'Toda la Biblia, unos 3 capítulos al día.'},
+  nt90:{titulo:'Nuevo Testamento en 90 días',libros:[40,66],dias:90,desc:'De Mateo a Apocalipsis, unos 3 capítulos al día.'},
+  salmos60:{titulo:'Salmos y Proverbios en 60 días',libros:[19,20],dias:60,desc:'Oración y sabiduría, 3 capítulos al día.'} };
+var _cacheLecturas={};
+function lecturasPlan(id){
+  if(_cacheLecturas[id]) return _cacheLecturas[id];
+  var p=PLANES_LECTURA[id], caps=[], dias=[];
+  for(var b=p.libros[0];b<=p.libros[1];b++) for(var c=1;c<=LIBROS[b-1][2];c++) caps.push([b,c]);
+  for(var i=0;i<p.dias;i++){
+    var a=Math.floor(i*caps.length/p.dias), z=Math.floor((i+1)*caps.length/p.dias), g=[];
+    caps.slice(a,z).forEach(function(x){ var u=g[g.length-1]; if(u && u.libro===x[0] && u.hasta===x[1]-1) u.hasta=x[1]; else g.push({tipo:'biblia',libro:x[0],desde:x[1],hasta:x[1]}); });
+    dias.push(g);
+  }
+  return (_cacheLecturas[id]=dias);
+}
+function diaPendiente(p){ var h={}; p.hechos.forEach(function(n){ h[n]=true; }); for(var i=1;i<=p.diaHoy;i++) if(!h[i]) return i; return Math.min(p.dias, p.diaHoy); }
+function diaPersonalHTML(p, n){
+  var hecho=p.hechos.indexOf(n)>=0, lect=lecturasPlan(p.plan)[n-1]||[];
+  return '<div class="row" style="align-items:flex-start"><div class="grow"><div class="tiny muted">DÍA '+n+(n===p.diaHoy?' · HOY':n<p.diaHoy?' · PENDIENTE':'')+'</div>'+
+    lect.map(function(l){ return '<button class="link" data-irp=\''+esc(JSON.stringify(l))+'\'>'+esc(refTexto(l))+'</button>'; }).join(' · ')+'</div>'+
+    '<label class="check"><input type="checkbox" data-marcap="'+n+'"'+(hecho?' checked':'')+'> <span class="small">Leído</span></label></div>';
+}
+function planPersonalInicioHTML(p){
+  if(!p) return '<div class="card flat"><div class="row"><span class="mas-ic">'+ICON.miplan+'</span><div class="grow small">¿Quiere leer la Biblia en un año? Empiece un plan de lectura personal.</div><button class="btn sm" id="empezarPlan">Ver planes</button></div></div>';
+  var n=p.hechos.length;
+  return '<div class="card"><div class="row"><div class="grow"><div class="tiny muted">MI PLAN DE LECTURA</div><h2>'+esc(p.titulo)+'</h2></div><span class="chip">'+n+'/'+p.dias+'</span></div>'+
+    '<div style="margin:10px 0">'+barra(pct(n,p.dias))+'</div><div class="day hoy">'+diaPersonalHTML(p, diaPendiente(p))+'</div></div>';
+}
+function enlazarPlanPersonal(el, despues){
+  $$('[data-irp]',el).forEach(function(b){ b.onclick=function(){ irALectura(JSON.parse(b.dataset.irp)); }; });
+  $$('[data-marcap]',el).forEach(function(c){ c.onchange=function(){ c.disabled=true;
+    llamar('marcarDiaPersonal',{dia:+c.dataset.marcap,hecho:c.checked}).then(function(){ toast(c.checked?'¡Bien hecho!':'Día desmarcado.'); setTimeout(despues,400); })
+    .catch(function(e){ c.disabled=false; c.checked=!c.checked; err(e); }); }; });
+}
+function vMiPlan(el){
+  Reloj.tipo=null;
+  conCache('miplan-'+S.yo.id, llamar('miPlanPersonal')).then(function(d){
+    var p=d.actual, h='<h1 style="margin-bottom:12px">Mi plan de lectura</h1>';
+    if(!p){
+      h+='<p class="small muted" style="margin-top:0">Elija un plan. Cada día le mostramos qué leer, y si se atrasa puede ponerse al día cuando quiera.</p>';
+      h+=d.catalogo.map(function(c){ var x=PLANES_LECTURA[c.id]; return '<div class="card"><h2>'+esc(c.titulo)+'</h2><p class="small muted" style="margin:4px 0 10px">'+esc(x?x.desc:'')+'</p><button class="btn primary" data-plan="'+c.id+'">Empezar hoy</button></div>'; }).join('');
+      el.innerHTML=h;
+      $$('[data-plan]',el).forEach(function(b){ b.onclick=function(){ b.disabled=true; llamar('empezarPlanPersonal',{plan:b.dataset.plan}).then(function(){ toast('¡Comenzó su plan! Hoy es el día 1.'); ir('miplan'); }).catch(function(e){ b.disabled=false; err(e); }); }; });
+      return;
+    }
+    var hechos={}; p.hechos.forEach(function(n){ hechos[n]=true; });
+    var atrasados=0; for(var i=1;i<=p.diaHoy;i++) if(!hechos[i]) atrasados++;
+    h+='<div class="card"><div class="row"><h2 class="grow">'+esc(p.titulo)+'</h2>'+(atrasados>1?'<span class="chip warn">'+atrasados+' días pendientes</span>':'<span class="chip ok">Al día</span>')+'</div>'+
+      '<div class="row small muted" style="margin:10px 0 6px"><span class="grow">'+p.hechos.length+' de '+p.dias+' días · empezó el '+fechaCorta(p.inicio)+'</span><span>'+pct(p.hechos.length,p.dias)+'%</span></div>'+barra(pct(p.hechos.length,p.dias))+'</div>';
+    var desde=Math.max(1,Math.min(diaPendiente(p),p.diaHoy-2)), hasta=Math.min(p.dias,p.diaHoy+6);
+    h+='<div class="card"><h2 style="margin-bottom:6px">Lecturas</h2><div class="list">';
+    for(var n=desde;n<=hasta;n++) h+='<div class="day'+(n===p.diaHoy?' hoy':'')+'">'+diaPersonalHTML(p,n)+'</div>';
+    h+='</div></div><button class="btn ghost" id="dejarPlan">Dejar este plan</button>';
+    el.innerHTML=h;
+    enlazarPlanPersonal(el, function(){ ir('miplan'); });
+    $('#dejarPlan',el).onclick=function(){ if(confirm('¿Dejar el plan? Podrá empezar otro cuando quiera.')) llamar('dejarPlanPersonal').then(function(){ ir('miplan'); }).catch(err); };
+  }).catch(function(e){ el.innerHTML='<div class="empty">'+esc(e.message)+'</div>'; });
+}
+
+// ── Calendario ──
+function vCalendario(el){
+  Reloj.tipo=null;
+  conCache('eventos-'+S.yo.id, llamar('eventos',{})).then(function(d){
+    var futuros=d.eventos.filter(function(e){ return e.fecha>=d.hoy; }), pasados=d.eventos.filter(function(e){ return e.fecha<d.hoy; }).reverse();
+    var h='<div class="row" style="margin-bottom:12px"><h1 class="grow">Calendario</h1>'+(d.puedeCrear?'<button class="btn primary" id="nuevoEv">+ Evento</button>':'')+'</div>';
+    if(!futuros.length) h+='<div class="card empty">No hay actividades próximas.'+(d.puedeCrear?' Agregue la primera con el botón de arriba.':'')+'</div>';
+    var mes='';
+    futuros.forEach(function(e){
+      var m=e.fecha.slice(0,7); if(m!==mes){ mes=m; h+='<h3 class="mes-cal">'+MESES_LARGOS[+m.slice(5,7)-1]+' '+m.slice(0,4)+'</h3>'; }
+      h+=tarjetaEventoHTML(e);
+    });
+    if(pasados.length) h+='<details style="margin-top:12px"><summary class="small muted" style="cursor:pointer">Actividades pasadas ('+pasados.length+')</summary>'+pasados.map(tarjetaEventoHTML).join('')+'</details>';
+    el.innerHTML=h;
+    if($('#nuevoEv',el)) $('#nuevoEv',el).onclick=function(){ formEvento(d, null); };
+    $$('[data-edev]',el).forEach(function(b){ b.onclick=function(){ formEvento(d, d.eventos.filter(function(x){ return x.id===b.dataset.edev; })[0]); }; });
+  }).catch(function(e){ el.innerHTML='<div class="empty">'+esc(e.message)+'</div>'; });
+}
+function tarjetaEventoHTML(e){
+  var f=new Date(e.fecha+'T12:00:00');
+  return '<div class="card"><div class="row" style="align-items:flex-start"><div class="fecha-ev grande"><b>'+f.getDate()+'</b><span>'+MESES_CORTOS[f.getMonth()]+'</span></div><div class="grow">'+
+    '<b>'+esc(e.titulo)+'</b><div class="small muted">'+fechaLarga(e.fecha)+(e.hora?' · '+hora12(e.hora):'')+(e.lugar?' · '+esc(e.lugar):'')+'</div>'+
+    '<div style="margin-top:4px"><span class="chip">'+(e.grupo?esc(e.grupo):'Toda la iglesia')+'</span></div>'+
+    (e.descripcion?'<p class="small" style="margin:8px 0 0;white-space:pre-wrap">'+esc(e.descripcion)+'</p>':'')+'</div>'+
+    (e.puedeEditar?'<button class="btn ghost sm" data-edev="'+e.id+'" aria-label="Editar evento">⋯</button>':'')+'</div></div>';
+}
+function formEvento(d, e){
+  e=e||{titulo:'',fecha:hoyLocal(),hora:'',lugar:'',descripcion:'',grupoId:d.destinos[0]?d.destinos[0].id:''};
+  var m=modal('<div class="row" style="margin-bottom:8px"><h2 class="grow">'+(e.id?'Editar evento':'Nuevo evento')+'</h2><button class="btn ghost" data-cerrar>Cerrar</button></div>'+
+    '<form id="fev"><label class="f"><span>Nombre</span><input type="text" name="titulo" required maxlength="120" value="'+esc(e.titulo)+'" placeholder="ej. Vigilia de oración"></label>'+
+    '<div class="row" style="gap:10px"><label class="f grow"><span>Fecha</span><input type="date" name="fecha" required value="'+esc(e.fecha)+'"></label><label class="f grow"><span>Hora (opcional)</span><input type="time" name="hora" value="'+esc(e.hora)+'"></label></div>'+
+    '<label class="f"><span>Lugar (opcional)</span><input type="text" name="lugar" maxlength="120" value="'+esc(e.lugar)+'"></label>'+
+    '<label class="f"><span>Para</span><select name="grupo">'+d.destinos.map(function(x){ return '<option value="'+esc(x.id)+'"'+(x.id===e.grupoId?' selected':'')+'>'+esc(x.nombre)+'</option>'; }).join('')+'</select></label>'+
+    '<label class="f"><span>Detalles (opcional)</span><textarea name="desc" maxlength="1000">'+esc(e.descripcion)+'</textarea></label>'+
+    '<p class="tiny muted">Con notificaciones activadas, se avisa el día anterior a las 6:00 p. m. y el mismo día a las 7:00 a. m.</p>'+
+    '<div class="row">'+(e.id?'<button type="button" class="btn danger" id="borrarEv">Eliminar</button>':'')+'<span class="grow"></span><button class="btn primary">Guardar</button></div></form>');
+  var f=$('#fev',m);
+  f.onsubmit=function(ev){ ev.preventDefault(); var b=$('button.primary',f); b.disabled=true;
+    llamar('guardarEvento',{id:e.id,titulo:f.titulo.value,fecha:f.fecha.value,hora:f.hora.value,lugar:f.lugar.value,grupoId:f.grupo.value,descripcion:f.desc.value})
+    .then(function(){ m.remove(); toast('Evento guardado.'); ir('calendario'); }).catch(function(x){ b.disabled=false; err(x); }); };
+  if($('#borrarEv',m)) $('#borrarEv',m).onclick=function(){ if(confirm('¿Eliminar este evento?')) llamar('guardarEvento',{id:e.id,eliminar:true}).then(function(){ m.remove(); ir('calendario'); }).catch(err); };
+}
+
+// ── Predicaciones ──
+function vSermones(el){
+  Reloj.tipo=null;
+  conCache('sermones', llamar('sermones')).then(function(d){
+    var h='<div class="row" style="margin-bottom:6px"><h1 class="grow">Predicaciones</h1>'+(d.puedeEditar?'<button class="btn primary" id="nuevoSer">+ Agregar</button>':'')+'</div>'+
+      '<p class="small muted" style="margin:0 0 14px">Escuche de nuevo los mensajes y repase las notas durante la semana.</p>';
+    if(!d.sermones.length) h+='<div class="card empty">Aún no hay predicaciones.'+(d.puedeEditar?' Agregue la del domingo con el enlace de YouTube.':'')+'</div>';
+    d.sermones.forEach(function(s){
+      h+='<div class="card"><div class="row" style="align-items:flex-start"><div class="grow"><h2>'+esc(s.titulo)+'</h2><div class="small muted">'+[s.predicador?esc(s.predicador):'',fechaCorta(s.fecha),s.pasaje?esc(s.pasaje):''].filter(String).join(' · ')+'</div></div>'+
+        (d.puedeEditar?'<button class="btn ghost sm" data-eds="'+s.id+'" aria-label="Editar">⋯</button>':'')+'</div>'+
+        '<div class="row" style="margin-top:10px;gap:8px">'+(s.videoId?'<button class="btn primary sm" data-oir="'+s.id+'">▶ Escuchar</button>':'')+(s.notas?'<button class="btn sm" data-notas="'+s.id+'">Notas</button>':'')+'</div>'+
+        (s.notas?'<div class="lect hidden" id="notas-'+s.id+'" style="margin-top:10px;white-space:pre-wrap"><div class="small">'+esc(s.notas)+'</div></div>':'')+'</div>';
+    });
+    el.innerHTML=h;
+    var porId=function(id){ return d.sermones.filter(function(x){ return x.id===id; })[0]; };
+    if($('#nuevoSer',el)) $('#nuevoSer',el).onclick=function(){ formSermon(null); };
+    $$('[data-eds]',el).forEach(function(b){ b.onclick=function(){ formSermon(porId(b.dataset.eds)); }; });
+    $$('[data-oir]',el).forEach(function(b){ b.onclick=function(){ var s=porId(b.dataset.oir); reproducirLista({titulo:'Predicaciones',canciones:[{id:s.id,videoId:s.videoId,titulo:s.titulo}]},0); }; });
+    $$('[data-notas]',el).forEach(function(b){ b.onclick=function(){ var n=$('#notas-'+b.dataset.notas,el); n.classList.toggle('hidden'); }; });
+  }).catch(function(e){ el.innerHTML='<div class="empty">'+esc(e.message)+'</div>'; });
+}
+function formSermon(s){
+  s=s||{titulo:'',predicador:'',fecha:hoyLocal(),pasaje:'',notas:''};
+  var m=modal('<div class="row" style="margin-bottom:8px"><h2 class="grow">'+(s.id?'Editar predicación':'Nueva predicación')+'</h2><button class="btn ghost" data-cerrar>Cerrar</button></div>'+
+    '<form id="fser"><label class="f"><span>Enlace de YouTube'+(s.id?' (déjelo vacío para conservar el video)':' (opcional)')+'</span><input type="text" name="enlace" placeholder="https://youtu.be/..."></label>'+
+    '<label class="f"><span>Título'+(s.id?'':' (si lo deja vacío se usa el del video)')+'</span><input type="text" name="titulo" maxlength="160" value="'+esc(s.titulo)+'"></label>'+
+    '<div class="row" style="gap:10px"><label class="f grow"><span>Predicador</span><input type="text" name="pred" maxlength="80" value="'+esc(s.predicador)+'"></label><label class="f grow"><span>Fecha</span><input type="date" name="fecha" value="'+esc(s.fecha)+'"></label></div>'+
+    '<label class="f"><span>Pasaje (opcional)</span><input type="text" name="pasaje" maxlength="80" value="'+esc(s.pasaje)+'" placeholder="ej. Juan 3:16-21"></label>'+
+    '<label class="f"><span>Notas del mensaje (opcional)</span><textarea name="notas" maxlength="4000" style="min-height:120px">'+esc(s.notas)+'</textarea></label>'+
+    '<div class="row">'+(s.id?'<button type="button" class="btn danger" id="borrarSer">Eliminar</button>':'')+'<span class="grow"></span><button class="btn primary">Guardar</button></div><p class="small muted" id="estSer"></p></form>');
+  var f=$('#fser',m);
+  f.onsubmit=function(ev){ ev.preventDefault(); var b=$('button.primary',f); b.disabled=true; $('#estSer',m).textContent='Guardando…';
+    llamar('guardarSermon',{id:s.id,enlace:f.enlace.value,titulo:f.titulo.value,predicador:f.pred.value,fecha:f.fecha.value,pasaje:f.pasaje.value,notas:f.notas.value})
+    .then(function(){ m.remove(); toast('Predicación guardada.'); ir('sermones'); }).catch(function(x){ b.disabled=false; $('#estSer',m).textContent=''; err(x); }); };
+  if($('#borrarSer',m)) $('#borrarSer',m).onclick=function(){ if(confirm('¿Eliminar esta predicación?')) llamar('guardarSermon',{id:s.id,eliminar:true}).then(function(){ m.remove(); ir('sermones'); }).catch(err); };
+}
+
+// ── Testimonios ──
+function vTestimonios(el){
+  Reloj.tipo=null;
+  llamar('testimonios').then(function(d){
+    var h='<h1 style="margin-bottom:4px">Testimonios</h1><p class="small muted" style="margin:0 0 14px">Lo que Dios ha hecho entre nosotros. Para compartir el suyo, marque su petición como contestada en <button class="link small" id="irOr">Oración</button>.</p>';
+    if(d.pendientes.length){
+      h+='<div class="card" style="border-color:var(--warn)"><h2 style="margin-bottom:8px">Por revisar ('+d.pendientes.length+')</h2><div class="list">'+d.pendientes.map(function(t){
+        return '<div><div class="tiny muted">'+esc(t.autor)+' · '+fechaCorta(t.contestada)+'</div><div class="small muted" style="margin-top:4px">Pidió: '+esc(t.peticion)+'</div><p style="margin:6px 0;white-space:pre-wrap">'+esc(t.testimonio)+'</p>'+
+          '<div class="row" style="gap:8px"><button class="btn primary sm" data-apr="'+t.peticionId+'">Publicar</button><button class="btn ghost sm" data-rech="'+t.peticionId+'">No publicar</button></div></div>'; }).join('')+'</div></div>';
+    }
+    if(!d.aprobados.length) h+='<div class="card empty">Aún no hay testimonios publicados.</div>';
+    d.aprobados.forEach(function(t){
+      h+='<div class="card"><div class="tiny muted">'+esc(t.autor)+' · '+fechaCorta(t.contestada)+'</div><div class="small muted" style="margin-top:6px">Pidió oración por: '+esc(t.peticion)+'</div><p style="margin:8px 0 0;white-space:pre-wrap;font-family:Literata,Georgia,serif;font-size:17px">'+esc(t.testimonio)+'</p></div>';
+    });
+    el.innerHTML=h;
+    $('#irOr',el).onclick=function(){ ir('oracion'); };
+    $$('[data-apr]',el).forEach(function(b){ b.onclick=function(){ llamar('revisarTestimonio',{peticionId:b.dataset.apr,aprobar:true}).then(function(){ toast('Testimonio publicado.'); ir('testimonios'); }).catch(err); }; });
+    $$('[data-rech]',el).forEach(function(b){ b.onclick=function(){ llamar('revisarTestimonio',{peticionId:b.dataset.rech,aprobar:false}).then(function(){ ir('testimonios'); }).catch(err); }; });
+  }).catch(function(e){ el.innerHTML='<div class="empty">'+esc(e.message)+'</div>'; });
+}
+
+// ── Reporte mensual ──
+function vReporte(el, o){
+  Reloj.tipo=null;
+  var mes=o.mes||hoyLocal().slice(0,7), gid=o.grupoId||'';
+  llamar('grupos').then(function(grupos){
+    var mios=grupos.filter(function(g){ return S.yo.rol==='admin' || g.liderId===S.yo.id; });
+    el.innerHTML='<h1 style="margin-bottom:12px">Reporte mensual</h1><div class="card no-print"><div class="row wrap2" style="gap:10px;align-items:flex-end">'+
+      '<label class="f" style="margin:0"><span>Mes</span><input type="month" id="rMes" value="'+mes+'" max="'+hoyLocal().slice(0,7)+'" style="width:auto"></label>'+
+      (mios.length>1?'<label class="f grow" style="margin:0"><span>Grupo</span><select id="rGrupo"><option value="">Todos mis grupos</option>'+mios.map(function(g){ return '<option value="'+g.id+'"'+(g.id===gid?' selected':'')+'>'+esc(g.nombre)+'</option>'; }).join('')+'</select></label>':'')+
+      '</div><div class="row" style="gap:8px;margin-top:12px"><button class="btn" id="rImp">Imprimir</button><button class="btn" id="rCsv">Descargar para Excel</button></div></div><div id="rCuerpo"><div class="spin"></div></div>';
+    var recargar=function(){ ir('reporte',{mes:$('#rMes').value||mes, grupoId:$('#rGrupo')?$('#rGrupo').value:''}); };
+    $('#rMes').onchange=recargar; if($('#rGrupo')) $('#rGrupo').onchange=recargar;
+    llamar('reporteMensual',{mes:mes,grupoId:gid}).then(function(r){
+      var h='<div class="card"><h2>Iglesia Bíblica Viviendo por Fe</h2><div class="small muted">Reporte de '+esc(r.titulo)+'</div></div>';
+      r.grupos.forEach(function(g){
+        h+='<div class="card"><div class="row"><div class="grow"><h2>'+esc(g.nombre)+'</h2><div class="tiny muted">Líder: '+esc(g.lider||'sin asignar')+' · '+g.reuniones+' reunion'+(g.reuniones===1?'':'es')+' registradas</div></div></div>'+
+          '<div class="stats" style="margin:10px 0"><div class="stat"><b>'+g.promedioAsistencia+'%</b><span>asistencia</span></div><div class="stat"><b>'+g.promedioLectura+'</b><span>días de lectura promedio</span></div><div class="stat"><b>'+g.miembros.length+'</b><span>miembros</span></div></div>'+
+          '<div class="tabla-rep"><table><thead><tr><th>Miembro</th><th>Asistencia</th><th>Días de lectura</th><th>Capítulos</th><th>Días del plan</th></tr></thead><tbody>'+
+          g.miembros.map(function(m){ return '<tr><td>'+esc(m.nombre)+'</td><td>'+(m.reuniones?m.asistencia+'/'+m.reuniones:'—')+'</td><td>'+m.diasLectura+'</td><td>'+m.capitulos+'</td><td>'+m.diasPlan+'</td></tr>'; }).join('')+
+          '</tbody></table></div></div>';
+      });
+      $('#rCuerpo').innerHTML=h;
+      $('#rImp').onclick=function(){ window.print(); };
+      $('#rCsv').onclick=function(){
+        var filas=[['Grupo','Miembro','Asistencia','Reuniones','Días de lectura','Capítulos','Días del plan']];
+        r.grupos.forEach(function(g){ g.miembros.forEach(function(m){ filas.push([g.nombre,m.nombre,m.asistencia,m.reuniones,m.diasLectura,m.capitulos,m.diasPlan]); }); });
+        var csv='﻿'+filas.map(function(f){ return f.map(function(x){ return '"'+String(x).replace(/"/g,'""')+'"'; }).join(';'); }).join('\r\n');
+        var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='reporte-'+r.mes+'.csv'; document.body.appendChild(a); a.click(); setTimeout(function(){ a.remove(); },500);
+      };
+    }).catch(function(e){ $('#rCuerpo').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; });
+  }).catch(function(e){ el.innerHTML='<div class="empty">'+esc(e.message)+'</div>'; });
+}
+
+// ── Panel del grupo: seguimiento pastoral y cumpleaños ──
+function seguimientoGrupoHTML(d){
+  var h='';
+  if(d.seguimiento && d.seguimiento.length){
+    h+='<div class="card" style="border-color:var(--warn)"><h2 style="margin-bottom:4px">Necesitan seguimiento ('+d.seguimiento.length+')</h2><p class="tiny muted" style="margin:0 0 8px">Una llamada o una visita esta semana puede hacer la diferencia.</p><div class="list">'+
+      d.seguimiento.map(function(s){ return '<div><b>'+esc(s.nombre)+'</b><div class="tiny" style="color:var(--warn)">'+s.motivos.map(esc).join(' · ')+'</div></div>'; }).join('')+'</div></div>';
+  }
+  var c=d.cumples;
+  if(c && (c.mes.length || c.sinFecha)){
+    h+='<div class="card flat"><h2 style="margin-bottom:6px">🎂 Cumpleaños de '+MESES_LARGOS[new Date().getMonth()]+'</h2>'+
+      (c.mes.length?'<div class="list">'+c.mes.map(function(x){ return '<div class="row"><span class="chip">'+x.dia+'</span><span class="grow">'+esc(x.nombre)+'</span>'+(c.hoy.some(function(y){ return y.id===x.id; })?'<span class="chip ok">¡Hoy!</span>':'')+'</div>'; }).join('')+'</div>':'<p class="small muted" style="margin:0">Nadie cumple años este mes.</p>')+
+      (c.sinFecha?'<p class="tiny muted" style="margin:8px 0 0">'+c.sinFecha+' miembro'+(c.sinFecha===1?'':'s')+' aún no ha'+(c.sinFecha===1?'':'n')+' puesto su cumpleaños (se pone en Mi cuenta).</p>':'')+'</div>';
+  }
+  return h;
+}
+
+// ── Mi cuenta: cumpleaños ──
+function cumpleFormHTML(){
+  var c=(S.inicio&&S.inicio.miCumple)||{mes:0,dia:0};
+  var dias=''; for(var i=1;i<=31;i++) dias+='<option value="'+i+'"'+(i===c.dia?' selected':'')+'>'+i+'</option>';
+  return '<div class="sep"></div><form id="fcump"><h3>Mi cumpleaños</h3><p class="tiny muted" style="margin:0 0 6px">Solo día y mes. Su líder y el pastor recibirán un aviso para saludarle.</p><div class="row" style="gap:8px">'+
+    '<select name="dia" style="width:auto"><option value="">Día</option>'+dias+'</select><select name="mes" style="width:auto"><option value="">Mes</option>'+MESES_LARGOS.map(function(m,i){ return '<option value="'+(i+1)+'"'+(i+1===c.mes?' selected':'')+'>'+m+'</option>'; }).join('')+'</select>'+
+    '<button class="btn">Guardar</button></div></form>';
+}
+function enlazarCumpleForm(m){
+  var f=$('#fcump',m); if(!f) return;
+  f.onsubmit=function(ev){ ev.preventDefault(); if(!f.dia.value||!f.mes.value){ toast('Elija el día y el mes.'); return; }
+    llamar('guardarCumple',{dia:+f.dia.value,mes:+f.mes.value}).then(function(c){ if(S.inicio) S.inicio.miCumple=c; toast('Cumpleaños guardado.'); }).catch(err); };
+}
+
+// ── Resumen del administrador ──
+function resumenExtrasHTML(d){
+  var seg=d.grupos.reduce(function(s,g){ return s+(g.seguimiento||0); },0);
+  if(!seg && !d.testimoniosPendientes) return '';
+  return '<div class="card flat"><div class="list">'+
+    (d.testimoniosPendientes?'<div class="row"><span class="grow small">'+d.testimoniosPendientes+' testimonio'+(d.testimoniosPendientes===1?'':'s')+' esperando su revisión</span><button class="btn sm" onclick="ir(\'testimonios\')">Revisar</button></div>':'')+
+    (seg?'<div class="row"><span class="grow small">'+seg+' persona'+(seg===1?'':'s')+' necesita'+(seg===1?'':'n')+' seguimiento (ver cada grupo)</span><button class="btn sm" onclick="ir(\'grupo\')">Ver grupos</button></div>':'')+
+    '</div></div>';
 }
 
 arrancar();
