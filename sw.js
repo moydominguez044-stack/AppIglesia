@@ -1,6 +1,6 @@
 // Service worker mínimo: permite instalar la app en el celular.
 // Guarda solo los archivos propios de la página; los datos siempre vienen del servidor.
-var CACHE = 'viviendo-por-fe-v1';
+var CACHE = 'viviendo-por-fe-v5';
 var ARCHIVOS = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'favicon.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(ARCHIVOS); }).then(function () { return self.skipWaiting(); }));

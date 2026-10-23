@@ -127,6 +127,31 @@ table.t td{padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:mi
 .sep{height:1px;background:var(--line);margin:14px 0}
 .lect{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface2);border-radius:10px;padding:8px;margin:6px 0}
 .lect select,.lect input{width:auto;flex:1;min-width:80px;padding:7px 8px}
+.nav button{position:relative}
+.badge{position:absolute;top:4px;left:calc(50% + 6px);background:var(--accent);color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;line-height:1.4}
+.mas-item{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;padding:12px 2px;cursor:pointer;color:inherit;font:inherit;border-top:1px solid var(--line)}
+.list>.mas-item:first-child{border-top:0}
+.mas-ic{width:38px;height:38px;border-radius:10px;background:var(--surface2);color:var(--primary);display:grid;place-items:center}
+.mas-ic svg{width:22px;height:22px}
+.msgs{height:calc(100vh - 330px);min-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:10px;background:var(--surface2);border-radius:var(--r)}
+.msg{max-width:82%;align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:7px 11px}
+.msg.mio{align-self:flex-end;background:var(--primary);color:var(--primary-ink);border-color:var(--primary);border-radius:14px 14px 4px 14px}
+.msg-de{font-size:12px;font-weight:700;color:var(--primary)}
+.msg-tx{white-space:pre-wrap;word-wrap:break-word}
+.msg-h{font-size:11px;opacity:.7;text-align:right;margin-top:2px}
+.msg.mio .link{color:inherit}
+.enviar{display:flex;gap:8px;margin-top:10px;align-items:flex-end}
+.enviar textarea{min-height:44px;max-height:140px;flex:1}
+.punto-verde{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ok);vertical-align:middle}
+.reproductor{position:fixed;right:12px;bottom:calc(68px + env(safe-area-inset-bottom));z-index:40;width:216px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 24px rgba(12,27,43,.25);padding:8px}
+.rep-video{width:200px;height:200px;background:#000;border-radius:8px;overflow:hidden}
+.rep-video iframe{width:200px;height:200px;display:block}
+.rep-tit{font-weight:700;font-size:13px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rep-sub{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rep-ctl{display:flex;justify-content:space-between;margin-top:4px}
+.con-reproductor .wrap{padding-bottom:340px}
+.cancion.sonando{background:var(--surface2);border-radius:10px}
+.cancion.sonando b{color:var(--primary)}
 </style>
 </head>
 <body>
@@ -157,6 +182,9 @@ var ICON = {
   grupo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 14.2A5 5 0 0 1 21.5 19"/></svg>',
   admin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>',
   oracion:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.4-9.3-9A5.3 5.3 0 0 1 12 6.3 5.3 5.3 0 0 1 21.3 12C19 16.6 12 21 12 21z"/></svg>',
+  chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/></svg>',
+  musica:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>',
+  mas:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
   cruz:'<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v18M6 9h12"/></svg>'
 };
 
@@ -242,6 +270,7 @@ function arrancar(){
 }
 function salir(silencioso){
   enviarTiempo();
+  desconectarChat(); cerrarReproductor(); S.chatConv=null;
   if(!silencioso && S.token) llamar('cerrarSesion').catch(function(){});
   ls('tk',null); S.token=null; S.yo=null; S.inicio=null; Reloj.tipo=null; S.vista='inicio'; S.bibliaModo=null; S.librosLista=null; S.leidosHoy={};
   $$('.modal').forEach(function(m){ m.remove(); });
@@ -279,22 +308,22 @@ function pantallaCambioObligatorio(){
 
 function entrar(){
   if(S.yo.debeCambiar){ pantallaCambioObligatorio(); return; }
-  var tabs=[['inicio','Inicio'],['biblia','Biblia'],['libros','Libros'],['planes','Planes'],['oracion','Oración']];
-  if(S.yo.rol==='lider' || S.yo.rol==='admin') tabs.push(['grupo','Grupos']);
-  if(S.yo.rol==='admin') tabs.push(['admin','Admin']);
+  var tabs=[['inicio','Inicio'],['biblia','Biblia'],['chat','Chat'],['musica','Alabanzas'],['mas','Más']];
   $('#app').innerHTML='<div class="top"><div class="in"><img class="minilogo" src="'+LOGO+'" alt=""><div class="brand">VIVIENDO POR FE<small>Iglesia Bíblica · El Viejo</small></div><button class="avatar" id="perfilBtn" title="Mi cuenta">'+esc(iniciales(S.yo.nombre))+'</button></div></div>'+
     '<main class="wrap" id="vista"></main>'+
     '<nav class="nav"><div class="in">'+tabs.map(function(t){ return '<button data-v="'+t[0]+'">'+ICON[t[0]]+t[1]+'</button>'; }).join('')+'</div></nav>';
-  $$('.nav button').forEach(function(b){ b.onclick=function(){ ir(b.dataset.v); }; });
+  $$('.nav button').forEach(function(b){ b.onclick=function(){ if(b.dataset.v==='mas') abrirMas(); else ir(b.dataset.v); }; });
   $('#perfilBtn').onclick=abrirPerfil;
   ir(S.vista || 'inicio');
+  setTimeout(function(){ if(S.token) conectarChat(); }, 1200);
 }
 function ir(v, opts){
+  limpiarVistaChat();
   S.vista=v; window.scrollTo(0,0);
-  $$('.nav button').forEach(function(b){ b.classList.toggle('on', b.dataset.v===v); });
+  marcarNav(v);
   Reloj.tipo = v==='biblia'?'biblia': v==='libros'?null : null;
   var el=$('#vista'); el.innerHTML='<div class="spin"></div>';
-  ({inicio:vInicio,biblia:vBiblia,libros:vLibros,planes:vPlanes,oracion:vOracion,grupo:vGrupo,admin:vAdmin}[v]||vInicio)(el, opts||{});
+  ({inicio:vInicio,biblia:vBiblia,libros:vLibros,planes:vPlanes,oracion:vOracion,grupo:vGrupo,admin:vAdmin,chat:vChat,musica:vMusica}[v]||vInicio)(el, opts||{});
 }
 
 // ─────────────────────────── Perfil ───────────────────────────
@@ -551,7 +580,7 @@ function descargarLibro(id, progreso){
   });
 }
 function abrirLibro(id, pagina){
-  if(S.vista!=='libros'){ S.vista='libros'; $$('.nav button').forEach(function(b){ b.classList.toggle('on', b.dataset.v==='libros'); }); }
+  if(S.vista!=='libros'){ limpiarVistaChat(); S.vista='libros'; marcarNav('libros'); }
   window.scrollTo(0,0);
   var el=$('#vista');
   cargarListaLibros().then(function(lista){
@@ -820,7 +849,7 @@ function adminUsuarios(c){
     function pintar(){
       var q=quitarAcentos($('#q').value||'');
       var lista=us.filter(function(u){ if(filtro==='sin' && (u.grupoId||!u.activo)) return false; if(filtro==='lider' && u.rol==='miembro') return false; if(filtro==='inactivo' && u.activo) return false; if(filtro!=='inactivo' && !u.activo && filtro!=='') return false; return !q || quitarAcentos(u.nombre+' '+u.usuario).indexOf(q)>=0; });
-      $('#lu').innerHTML=lista.length? lista.map(function(u){ return '<div class="row" style="cursor:pointer'+(u.activo?'':';opacity:.55')+'" data-u="'+u.id+'"><div class="avatar" style="width:32px;height:32px;font-size:12px">'+esc(iniciales(u.nombre))+'</div><div class="grow"><b>'+esc(u.nombre)+'</b><div class="tiny muted">@'+esc(u.usuario)+' · '+esc(u.id)+' · '+ROLES[u.rol]+(u.grupo?' · '+esc(u.grupo):'')+'</div></div>'+(u.debeCambiar?'<span class="chip">sin ingresar</span>':'')+(!u.activo?'<span class="chip bad">inactivo</span>':'')+'</div>'; }).join('') : '<div class="empty">Sin resultados.</div>';
+      $('#lu').innerHTML=lista.length? lista.map(function(u){ return '<div class="row" style="cursor:pointer'+(u.activo?'':';opacity:.55')+'" data-u="'+u.id+'"><div class="avatar" style="width:32px;height:32px;font-size:12px">'+esc(iniciales(u.nombre))+'</div><div class="grow"><b>'+esc(u.nombre)+'</b><div class="tiny muted">@'+esc(u.usuario)+' · '+esc(u.id)+' · '+ROLES[u.rol]+(u.alabanza?' · Alabanzas':'')+(u.grupo?' · '+esc(u.grupo):'')+'</div></div>'+(u.debeCambiar?'<span class="chip">sin ingresar</span>':'')+(!u.activo?'<span class="chip bad">inactivo</span>':'')+'</div>'; }).join('') : '<div class="empty">Sin resultados.</div>';
       $$('[data-u]',c).forEach(function(x){ x.onclick=function(){ formUsuario(us.filter(function(u){return u.id===x.dataset.u;})[0]); }; });
     }
     $('#q').oninput=pintar;
@@ -837,12 +866,13 @@ function formUsuario(u){
     '<label class="f"><span>Rol</span><select name="r">'+Object.keys(ROLES).map(function(k){ return '<option value="'+k+'"'+((u?u.rol:'miembro')===k?' selected':'')+'>'+ROLES[k]+'</option>'; }).join('')+'</select></label>'+
     '<label class="f"><span>Grupo pequeño</span><select name="g"><option value="">Sin grupo</option>'+gs.map(function(g){ return '<option value="'+g.id+'"'+(u&&u.grupoId===g.id?' selected':'')+'>'+esc(g.nombre)+'</option>'; }).join('')+'</select></label>'+
     (u?'<label class="check" style="margin:12px 0"><input type="checkbox" name="a"'+(u.activo?' checked':'')+'> <span>Cuenta activa</span></label>':'')+
+    '<label class="check" style="margin:12px 0"><input type="checkbox" name="al"'+(u&&u.alabanza?' checked':'')+'> <span>Encargado de alabanzas (puede armar las listas de música)</span></label>'+
     '<div class="row" style="margin-top:12px">'+(u?'<button type="button" class="btn" id="rc">Restablecer contraseña</button>':'')+'<span class="grow"></span><button class="btn primary">'+(u?'Guardar':'Crear usuario')+'</button></div></form>');
   var f=$('#fu',m);
   if(!u){ f.n.oninput=function(){ if(!f.u.dataset.tocado) f.u.value=sugerirUsuario(f.n.value); }; f.u.oninput=function(){ f.u.dataset.tocado='1'; }; }
   f.onsubmit=function(ev){ ev.preventDefault(); var b=$('button.primary',f); b.disabled=true;
-    var p = u ? llamar('editarUsuario',{id:u.id,nombre:f.n.value,usuario:f.u.value,rol:f.r.value,grupoId:f.g.value,activo:f.a.checked}).then(function(){ m.remove(); toast('Guardado.'); ir('admin',{tab:'usuarios'}); })
-              : llamar('crearUsuario',{nombre:f.n.value,usuario:f.u.value,rol:f.r.value,grupoId:f.g.value}).then(function(r){ m.remove(); mostrarClave(r); ir('admin',{tab:'usuarios'}); });
+    var p = u ? llamar('editarUsuario',{id:u.id,nombre:f.n.value,usuario:f.u.value,rol:f.r.value,grupoId:f.g.value,activo:f.a.checked}).then(function(){ return f.al.checked!==!!u.alabanza ? llamar('permisoAlabanza',{id:u.id,valor:f.al.checked}) : null; }).then(function(){ m.remove(); toast('Guardado.'); ir('admin',{tab:'usuarios'}); })
+              : llamar('crearUsuario',{nombre:f.n.value,usuario:f.u.value,rol:f.r.value,grupoId:f.g.value}).then(function(r){ return (f.al.checked? llamar('permisoAlabanza',{id:r.id,valor:true}) : Promise.resolve()).then(function(){ return r; }); }).then(function(r){ m.remove(); mostrarClave(r); ir('admin',{tab:'usuarios'}); });
     p.catch(function(e){ b.disabled=false; err(e); });
   };
   if(u) $('#rc',m).onclick=function(){ if(confirm('Se creará una contraseña temporal nueva para '+u.nombre+'. ¿Continuar?')) llamar('restablecerClave',{id:u.id}).then(function(r){ m.remove(); r.nombre=u.nombre; mostrarClave(r,'Contraseña restablecida'); }).catch(err); };
@@ -1046,7 +1076,8 @@ function adminAjustes(c){
       '<div class="card"><h2>YouVersion</h2><p class="small">Para ofrecer más versiones de la Biblia, registre la app de la iglesia en <b>platform.youversion.com</b> y pegue aquí la App Key. Las versiones disponibles dependen de las licencias que YouVersion otorgue a esa clave.</p>'+
       (a.youversion?'<p class="small">Clave guardada: <b>'+esc(a.youversion)+'</b> <button class="link small" id="quitarYV">Quitar</button></p>':'')+
       '<form id="fyv" class="row"><input type="password" name="k" placeholder="App Key de YouVersion" autocomplete="off" class="grow" required><button class="btn primary">Guardar</button></form><p class="small muted" id="yvRes" style="margin-bottom:0"></p></div>'+
-      '<div class="card flat"><h2>Base de datos</h2><p class="small" style="margin-bottom:0">Los datos de la app viven en una hoja de cálculo de la cuenta de la iglesia. <a href="'+esc(a.baseDatos)+'" target="_blank" rel="noopener">Abrir hoja</a>. Evite editarla a mano.</p></div>';
+      '<div id="ajFirebase"></div><div class="card flat"><h2>Base de datos</h2><p class="small" style="margin-bottom:0">Los datos de la app viven en una hoja de cálculo de la cuenta de la iglesia. <a href="'+esc(a.baseDatos)+'" target="_blank" rel="noopener">Abrir hoja</a>. Evite editarla a mano.</p></div>';
+    pintarAjustesFirebase($('#ajFirebase',c), a);
     $('#sync',c).onclick=function(){ var b=this; b.disabled=true; $('#syncRes',c).textContent='Revisando la carpeta…';
       llamar('sincronizarBiblioteca').then(function(r){ b.disabled=false; S.librosLista=null;
         $('#syncRes',c).textContent=r.total+' PDF en la carpeta · '+r.agregados+' nuevo'+(r.agregados===1?'':'s')+(r.retirados?' · '+r.retirados+' retirado'+(r.retirados===1?'':'s'):'')+'.'; })
@@ -1059,8 +1090,366 @@ function adminAjustes(c){
   }).catch(function(e){ c.innerHTML='<div class="empty">'+esc(e.message)+'</div>'; });
 }
 
-if('serviceWorker' in navigator && location.protocol==='https:'){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
+// ─────────────────────────── Navegación con menú "Más" ───────────────────────────
+var MAS = ['libros','planes','oracion','grupo','admin'];
+function marcarNav(v){ $$('.nav button').forEach(function(b){ b.classList.toggle('on', b.dataset.v===v || (b.dataset.v==='mas' && MAS.indexOf(v)>=0)); }); }
+function abrirMas(){
+  var items=[['libros','Biblioteca','Libros en PDF para estudiar'],['planes','Planes','Planes de estudio de los grupos'],['oracion','Oración','Peticiones de su grupo']];
+  if(S.yo.rol==='lider' || S.yo.rol==='admin') items.push(['grupo','Grupos','Avance, asistencia y avisos']);
+  if(S.yo.rol==='admin') items.push(['admin','Administración','Usuarios, grupos, avisos y ajustes']);
+  var m=modal('<div class="row" style="margin-bottom:6px"><h2 class="grow">Más</h2><button class="btn ghost" data-cerrar>Cerrar</button></div><div class="list">'+
+    items.map(function(i){ return '<button class="mas-item" data-ir="'+i[0]+'"><span class="mas-ic">'+ICON[i[0]]+'</span><span class="grow" style="text-align:left"><b>'+i[1]+'</b><span class="tiny muted" style="display:block">'+i[2]+'</span></span><span class="muted">›</span></button>'; }).join('')+'</div>');
+  $$('[data-ir]',m).forEach(function(b){ b.onclick=function(){ m.remove(); ir(b.dataset.ir); }; });
+}
+
+// ─────────────────────────── Chat (Firebase) ───────────────────────────
+var FB_SDK='https://www.gstatic.com/firebasejs/10.12.2/';
+var CH={};
+function reiniciarChat(){ CH={estado:'apagado', enLinea:{}, silenciados:{}, bandeja:{}, refs:[], vistaRefs:[], avisos:[]}; }
+reiniciarChat();
+function cargarScript(src){
+  return new Promise(function(ok,mal){
+    if(document.querySelector('script[src="'+src+'"]')){ ok(); return; }
+    var s=document.createElement('script'); s.src=src; s.onload=function(){ ok(); }; s.onerror=function(){ mal(new Error('No se pudo cargar el chat. Revise su conexión.')); };
+    document.head.appendChild(s);
+  });
+}
+function conectarChat(){
+  if(CH.promesa) return CH.promesa;
+  CH.estado='conectando';
+  CH.promesa=llamar('chatToken').then(function(r){
+    if(!r.configurado){ CH.estado='sin-config'; return CH; }
+    return cargarScript(FB_SDK+'firebase-app-compat.js').then(function(){ return cargarScript(FB_SDK+'firebase-auth-compat.js'); })
+    .then(function(){ return cargarScript(FB_SDK+'firebase-database-compat.js'); })
+    .then(function(){
+      var app=(firebase.apps||[]).filter(function(a){ return a.name==='iglesia'; })[0] || firebase.initializeApp(r.config,'iglesia');
+      var auth=app.auth();
+      return auth.setPersistence(firebase.auth.Auth.Persistence.NONE).then(function(){ return auth.signInWithCustomToken(r.token); }).then(function(){
+        CH.app=app; CH.db=app.database(); CH.uid=r.uid; CH.nombre=r.nombre; CH.mod=r.mod; CH.estado='listo';
+        iniciarPresencia(); escucharGlobales(); avisarChat('estado');
+        return CH;
+      });
+    });
+  }).catch(function(e){ CH.estado='error'; CH.error=e.message; CH.promesa=null; avisarChat('estado'); return CH; });
+  return CH.promesa;
+}
+function TS(){ return firebase.database.ServerValue.TIMESTAMP; }
+function escuchar(lista, ref, ev, fn){ ref.on(ev, fn); lista.push([ref, ev, fn]); }
+function iniciarPresencia(){
+  var yo=CH.db.ref('presencia/'+CH.uid);
+  escuchar(CH.refs, CH.db.ref('.info/connected'), 'value', function(s){
+    if(s.val()!==true) return;
+    yo.onDisconnect().set({nombre:CH.nombre, online:false, t:TS()}).then(function(){ return yo.set({nombre:CH.nombre, online:true, t:TS()}); }).catch(function(){});
+  });
+}
+function escucharGlobales(){
+  escuchar(CH.refs, CH.db.ref('presencia'), 'value', function(s){ var en={}; s.forEach(function(c){ var v=c.val(); if(v && v.online) en[c.key]=v.nombre; }); CH.enLinea=en; avisarChat('presencia'); });
+  escuchar(CH.refs, CH.db.ref('silenciados'), 'value', function(s){ CH.silenciados=s.val()||{}; avisarChat('silenciados'); });
+  escuchar(CH.refs, CH.db.ref('bandeja/'+CH.uid), 'value', function(s){ CH.bandeja=s.val()||{}; actualizarInsignia(); avisarChat('bandeja'); });
+}
+function avisarChat(tipo){ CH.avisos.forEach(function(a){ if(a[0]===tipo || a[0]==='*') try{ a[1](); }catch(e){} }); }
+function alAviso(tipo, fn){ CH.avisos.push([tipo, fn]); }
+function limpiarVistaChat(){
+  (CH.vistaRefs||[]).forEach(function(x){ try{ x[0].off(x[1], x[2]); }catch(e){} });
+  CH.vistaRefs=[]; CH.avisos=[];
+}
+function desconectarChat(){
+  limpiarVistaChat();
+  (CH.refs||[]).forEach(function(x){ try{ x[0].off(x[1], x[2]); }catch(e){} });
+  try{
+    if(CH.db){ CH.db.ref('presencia/'+CH.uid).set({nombre:CH.nombre, online:false, t:TS()}).catch(function(){}); }
+    if(CH.app) CH.app.auth().signOut().catch(function(){});
+  }catch(e){}
+  reiniciarChat(); actualizarInsignia();
+}
+function vistoKey(cid){ return 'visto_'+(S.yo?S.yo.id:'')+'_'+cid; }
+function noLeidos(){
+  var n=0; Object.keys(CH.bandeja||{}).forEach(function(cid){ var b=CH.bandeja[cid]; if(b && b.de && b.de!==CH.uid && Number(b.t||0) > Number(ls(vistoKey(cid))||0)) n++; });
+  return n;
+}
+function actualizarInsignia(){
+  var b=$('.nav button[data-v="chat"]'); if(!b) return;
+  var n=noLeidos(), i=$('.badge',b);
+  if(n && !i){ i=document.createElement('span'); i.className='badge'; b.appendChild(i); }
+  if(i){ if(n) i.textContent=n; else i.remove(); }
+}
+function horaMsg(t){
+  if(!t) return '';
+  var d=new Date(Number(t)), h=new Date();
+  var hora=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+  return d.toDateString()===h.toDateString()? hora : fechaCorta(d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2))+' '+hora;
+}
+function vChat(el, o){
+  Reloj.tipo=null;
+  var tab=o.tab||S.chatTab||'general'; S.chatTab=tab;
+  if(o.conv) S.chatConv=o.conv; else if(!o.mantenerConv) S.chatConv=null;
+  el.innerHTML='<div class="row" style="margin-bottom:10px"><h1 class="grow">Chat</h1><button class="chip ok" id="enLinea" style="border:0;cursor:pointer">● …</button></div><div id="chatCuerpo"><div class="spin"></div></div>';
+  conectarChat().then(function(){
+    if(S.vista!=='chat') return;
+    var c=$('#chatCuerpo');
+    if(CH.estado==='sin-config'){ c.innerHTML='<div class="card empty">El chat todavía no está activado.'+(S.yo.rol==='admin'?' Conéctelo en <b>Admin → Ajustes → Chat</b>.':' El administrador lo activará pronto.')+'</div>'; $('#enLinea').classList.add('hidden'); return; }
+    if(CH.estado!=='listo'){ c.innerHTML='<div class="card empty">'+esc(CH.error||'No se pudo conectar al chat.')+'<div style="margin-top:10px"><button class="btn sm" id="reint">Reintentar</button></div></div>'; $('#reint').onclick=function(){ ir('chat'); }; return; }
+    var pintarEnLinea=function(){ var n=Object.keys(CH.enLinea).length; var b=$('#enLinea'); if(b) b.textContent='● '+n+' en línea'; };
+    pintarEnLinea(); alAviso('presencia', pintarEnLinea);
+    $('#enLinea').onclick=verEnLinea;
+    if(S.chatConv){ verConversacion(c, S.chatConv); return; }
+    var n=noLeidos();
+    c.innerHTML='<div class="tabs"><button data-t="general" class="'+(tab==='general'?'on':'')+'">Sala general</button><button data-t="privados" class="'+(tab==='privados'?'on':'')+'">Privados'+(n?' ('+n+')':'')+'</button></div><div id="chatTab"></div>';
+    $$('[data-t]',c).forEach(function(b){ b.onclick=function(){ ir('chat',{tab:b.dataset.t}); }; });
+    if(tab==='general') salaGeneral($('#chatTab')); else listaPrivados($('#chatTab'));
+  });
+}
+function verEnLinea(){
+  var ids=Object.keys(CH.enLinea).sort(function(a,b){ return String(CH.enLinea[a]).localeCompare(CH.enLinea[b]); });
+  modal('<div class="row" style="margin-bottom:6px"><h2 class="grow">En línea ahora</h2><button class="btn ghost" data-cerrar>Cerrar</button></div>'+
+    (ids.length?'<div class="list">'+ids.map(function(id){ return '<div class="row"><span class="punto-verde"></span><span class="grow">'+esc(CH.enLinea[id])+(id===CH.uid?' <span class="tiny muted">(usted)</span>':'')+'</span></div>'; }).join('')+'</div>':'<div class="empty">Nadie más está conectado.</div>'));
+}
+function cajaMensajes(cont, ref, opciones){
+  cont.innerHTML='<div class="msgs" id="msgs"><div class="empty tiny">Cargando mensajes…</div></div>'+
+    '<form class="enviar" id="fmsg"><textarea name="t" rows="1" maxlength="1000" placeholder="Escriba un mensaje…" required></textarea><button class="btn primary" aria-label="Enviar">Enviar</button></form><div id="avisoSil"></div>';
+  var caja=$('#msgs',cont), f=$('#fmsg',cont), vacio=true;
+  var abajo=function(){ return caja.scrollHeight-caja.scrollTop-caja.clientHeight<80; };
+  var q=ref.orderByChild('t').limitToLast(150);
+  var timer=setTimeout(function(){ if(vacio) caja.innerHTML='<div class="empty tiny">'+(opciones.vacio||'Aún no hay mensajes. ¡Escriba el primero!')+'</div>'; },1500);
+  escuchar(CH.vistaRefs, q, 'child_added', function(s){
+    var m=s.val(); if(!m) return;
+    if(vacio){ caja.innerHTML=''; vacio=false; clearTimeout(timer); }
+    var pegado=abajo(), mio=m.uid===CH.uid;
+    var d=document.createElement('div'); d.className='msg'+(mio?' mio':''); d.id='m_'+s.key;
+    var puedeBorrar=opciones.moderable && (CH.mod || mio);
+    d.innerHTML=(mio?'':'<div class="msg-de">'+esc(m.nombre)+'</div>')+'<div class="msg-tx">'+esc(m.texto)+'</div><div class="msg-h">'+horaMsg(m.t)+(puedeBorrar?' <button class="link tiny" data-acc="'+s.key+'" aria-label="Opciones del mensaje">⋯</button>':'')+'</div>';
+    caja.appendChild(d);
+    if(puedeBorrar) $('[data-acc]',d).onclick=function(){ opcionesMensaje(ref, s.key, m); };
+    if(pegado || mio) caja.scrollTop=caja.scrollHeight;
+    if(opciones.alRecibir) opciones.alRecibir(m);
+  });
+  escuchar(CH.vistaRefs, q, 'child_removed', function(s){ var e=document.getElementById('m_'+s.key); if(e) e.remove(); });
+  var ta=f.t;
+  ta.onkeydown=function(ev){ if(ev.key==='Enter' && !ev.shiftKey){ ev.preventDefault(); f.requestSubmit ? f.requestSubmit() : f.onsubmit(new Event('submit')); } };
+  f.onsubmit=function(ev){ if(ev && ev.preventDefault) ev.preventDefault();
+    var texto=ta.value.trim(); if(!texto) return;
+    var b=$('button',f); b.disabled=true;
+    ref.push({uid:CH.uid, nombre:CH.nombre, texto:texto.slice(0,1000), t:TS()}).then(function(){ ta.value=''; b.disabled=false; ta.focus(); if(opciones.alEnviar) opciones.alEnviar(texto); })
+    .catch(function(){ b.disabled=false; toast(opciones.general && CH.silenciados[CH.uid] ? 'Un moderador lo silenció en la sala general.' : 'No se pudo enviar el mensaje.'); });
+  };
+  if(opciones.general){
+    var sil=function(){ var s=!!CH.silenciados[CH.uid]; ta.disabled=s; $('button',f).disabled=s; $('#avisoSil',cont).innerHTML=s?'<p class="tiny" style="color:var(--bad);margin:6px 0 0">Un moderador lo silenció en la sala general. Puede leer, pero no escribir.</p>':''; };
+    sil(); alAviso('silenciados', sil);
+  }
+}
+function opcionesMensaje(ref, key, m){
+  var esMod=CH.mod, otro=m.uid!==CH.uid, sil=!!CH.silenciados[m.uid];
+  var md=modal('<h2>Mensaje</h2><p class="small" style="white-space:pre-wrap">'+esc(m.texto)+'</p><div class="list">'+
+    '<button class="btn block danger" id="borrarMsg">Borrar mensaje</button>'+
+    (esMod && otro?'<button class="btn block" id="silMsg">'+(sil?'Quitar silencio a ':'Silenciar a ')+esc(m.nombre)+'</button>':'')+
+    '<button class="btn block ghost" data-cerrar>Cerrar</button></div>');
+  $('#borrarMsg',md).onclick=function(){ ref.child(key).remove().then(function(){ md.remove(); toast('Mensaje borrado.'); }).catch(function(){ toast('No tiene permiso para borrar este mensaje.'); }); };
+  if($('#silMsg',md)) $('#silMsg',md).onclick=function(){
+    var r=CH.db.ref('silenciados/'+m.uid);
+    (sil? r.remove() : r.set(true)).then(function(){ md.remove(); toast(sil? m.nombre+' ya puede escribir.' : m.nombre+' fue silenciado en la sala general.'); }).catch(function(){ toast('No se pudo cambiar.'); });
+  };
+}
+function salaGeneral(cont){
+  cajaMensajes(cont, CH.db.ref('general'), {general:true, moderable:true, vacio:'Aún no hay mensajes en la sala general. ¡Salude a la iglesia!'});
+}
+function cidCon(otro){ return [CH.uid, otro].sort().join('__'); }
+function listaPrivados(cont){
+  function pintar(){
+    var ids=Object.keys(CH.bandeja||{}).sort(function(a,b){ return Number(CH.bandeja[b].t||0)-Number(CH.bandeja[a].t||0); });
+    cont.innerHTML=(CH.mod?'<button class="btn primary block" id="nuevoPriv" style="margin-bottom:12px">+ Nuevo mensaje privado</button>':'<p class="small muted" style="margin-top:0">Solo el pastor y los líderes pueden iniciar mensajes privados. Aquí verá los que le envíen y podrá responder.</p>')+
+      (ids.length?'<div class="card"><div class="list">'+ids.map(function(cid){ var b=CH.bandeja[cid], nuevo=b.de && b.de!==CH.uid && Number(b.t||0)>Number(ls(vistoKey(cid))||0);
+        return '<div class="row" style="cursor:pointer" data-cid="'+esc(cid)+'"><div class="avatar" style="width:34px;height:34px;font-size:12px">'+esc(iniciales(b.nombre))+'</div><div class="grow"><b>'+esc(b.nombre)+'</b>'+(CH.enLinea[b.con]?' <span class="punto-verde" title="En línea"></span>':'')+'<div class="tiny muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(b.ultimo||'Conversación nueva')+'</div></div><div class="tiny muted" style="text-align:right">'+horaMsg(b.t)+(nuevo?'<div><span class="badge" style="position:static">nuevo</span></div>':'')+'</div></div>'; }).join('')+'</div></div>'
+      :'<div class="card empty">No tiene mensajes privados.</div>');
+    if($('#nuevoPriv',cont)) $('#nuevoPriv',cont).onclick=nuevoPrivado;
+    $$('[data-cid]',cont).forEach(function(d){ d.onclick=function(){ var b=CH.bandeja[d.dataset.cid]; ir('chat',{tab:'privados',conv:{cid:d.dataset.cid, con:b.con, nombre:b.nombre}}); }; });
+  }
+  pintar(); alAviso('bandeja', pintar); alAviso('presencia', pintar);
+}
+function nuevoPrivado(){
+  var m=modal('<div class="row" style="margin-bottom:8px"><h2 class="grow">¿A quién le escribe?</h2><button class="btn ghost" data-cerrar>Cerrar</button></div><input type="search" id="bq" placeholder="Buscar por nombre"><div class="list" id="dir" style="margin-top:8px"><div class="spin"></div></div>');
+  llamar('directorio').then(function(lista){
+    function pintar(){
+      var q=quitarAcentos($('#bq',m).value||'');
+      var ver=lista.filter(function(u){ return !q || quitarAcentos(u.nombre).indexOf(q)>=0; });
+      $('#dir',m).innerHTML=ver.length? ver.map(function(u){ return '<div class="row" style="cursor:pointer" data-u="'+esc(u.id)+'"><div class="grow"><b>'+esc(u.nombre)+'</b>'+(CH.enLinea[u.id]?' <span class="punto-verde"></span>':'')+'<div class="tiny muted">'+ROLES[u.rol]+(u.grupo?' · '+esc(u.grupo):'')+'</div></div><span class="muted">›</span></div>'; }).join('') : '<div class="empty">Sin resultados.</div>';
+      $$('[data-u]',m).forEach(function(d){ d.onclick=function(){ var u=lista.filter(function(x){return x.id===d.dataset.u;})[0]; m.remove(); abrirPrivadoCon(u); }; });
+    }
+    $('#bq',m).oninput=pintar; pintar();
+  }).catch(function(e){ $('#dir',m).innerHTML='<div class="empty">'+esc(e.message)+'</div>'; });
+}
+function abrirPrivadoCon(u){
+  var cid=cidCon(u.id), meta=CH.db.ref('privados/'+cid+'/meta');
+  meta.once('value').then(function(s){ return s.exists()? null : meta.set({creador:CH.uid, t:TS()}); })
+  .then(function(){ return CH.bandeja[cid]? null : CH.db.ref('bandeja/'+CH.uid+'/'+cid).set({con:u.id, nombre:u.nombre, t:TS(), ultimo:'', de:CH.uid}); })
+  .then(function(){ ir('chat',{tab:'privados',conv:{cid:cid, con:u.id, nombre:u.nombre}}); })
+  .catch(function(){ toast('No se pudo abrir la conversación.'); });
+}
+function verConversacion(c, conv){
+  c.innerHTML='<div class="row" style="margin-bottom:10px"><button class="btn sm" id="volverPriv">‹ Privados</button><div class="grow"><b>'+esc(conv.nombre)+'</b> <span id="estOtro" class="tiny muted"></span></div></div><div id="convCaja"></div>';
+  $('#volverPriv',c).onclick=function(){ S.chatConv=null; ir('chat',{tab:'privados'}); };
+  var est=function(){ var e=$('#estOtro',c); if(e) e.innerHTML=CH.enLinea[conv.con]?'<span class="punto-verde"></span> en línea':''; };
+  est(); alAviso('presencia', est);
+  var marcar=function(){ ls(vistoKey(conv.cid), String(Date.now()+5000)); actualizarInsignia(); };
+  marcar();
+  cajaMensajes($('#convCaja',c), CH.db.ref('privados/'+conv.cid+'/msgs'), {
+    vacio:'Escriba el primer mensaje a '+esc(conv.nombre)+'.',
+    alRecibir: marcar,
+    alEnviar: function(texto){
+      var ultimo=texto.slice(0,80);
+      CH.db.ref('bandeja/'+CH.uid+'/'+conv.cid).set({con:conv.con, nombre:conv.nombre, t:TS(), ultimo:ultimo, de:CH.uid}).catch(function(){});
+      CH.db.ref('bandeja/'+conv.con+'/'+conv.cid).set({con:CH.uid, nombre:CH.nombre, t:TS(), ultimo:ultimo, de:CH.uid}).catch(function(){});
+    }
+  });
+}
+
+// ─────────────────────────── Alabanzas (YouTube) ───────────────────────────
+var MP={cola:[], i:0, player:null, titulo:'', estado:'', api:null, abierta:null};
+function cargarYouTube(){
+  if(MP.api) return MP.api;
+  MP.api=new Promise(function(ok, mal){
+    if(window.YT && window.YT.Player){ ok(window.YT); return; }
+    var previo=window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady=function(){ if(previo) try{ previo(); }catch(e){} ok(window.YT); };
+    cargarScript('https://www.youtube.com/iframe_api').catch(function(e){ MP.api=null; mal(e); });
+  });
+  return MP.api;
+}
+function reproductorHTML(){
+  var c=$('#reproductor');
+  if(!c){
+    c=document.createElement('div'); c.id='reproductor'; c.className='reproductor';
+    c.innerHTML='<div class="rep-video"><div id="ytPlayer"></div></div><div class="rep-info"><div class="rep-tit" id="repTit"></div><div class="rep-sub tiny" id="repSub"></div>'+
+      '<div class="rep-ctl"><button class="btn sm ghost" id="repAnt" aria-label="Anterior">⏮</button><button class="btn sm primary" id="repPlay" aria-label="Pausar">⏸</button><button class="btn sm ghost" id="repSig" aria-label="Siguiente">⏭</button><button class="btn sm ghost" id="repCerrar" aria-label="Cerrar reproductor">✕</button></div></div>';
+    document.body.appendChild(c); document.body.classList.add('con-reproductor');
+    $('#repAnt').onclick=function(){ irCancion(MP.i-1); };
+    $('#repSig').onclick=function(){ irCancion(MP.i+1); };
+    $('#repPlay').onclick=function(){ if(!MP.player) return; if(MP.estado===1) MP.player.pauseVideo(); else MP.player.playVideo(); };
+    $('#repCerrar').onclick=cerrarReproductor;
+  }
+  return c;
+}
+function pintarReproductor(){
+  var s=MP.cola[MP.i]; if(!s) return;
+  $('#repTit').textContent=s.titulo||'Alabanza';
+  $('#repSub').textContent=(MP.i+1)+' de '+MP.cola.length+' · '+MP.titulo;
+  $('#repPlay').textContent=MP.estado===1?'⏸':'▶';
+  $('#repPlay').setAttribute('aria-label', MP.estado===1?'Pausar':'Reproducir');
+  $('#repAnt').disabled=MP.i<=0; $('#repSig').disabled=MP.i>=MP.cola.length-1;
+  $$('[data-sonando]').forEach(function(e){ e.classList.toggle('sonando', e.dataset.sonando===s.id); });
+}
+function reproducirLista(lista, desde){
+  if(!lista.canciones.length){ toast('Esta lista no tiene canciones todavía.'); return; }
+  MP.cola=lista.canciones.slice(); MP.i=desde||0; MP.titulo=lista.titulo;
+  reproductorHTML(); pintarReproductor();
+  cargarYouTube().then(function(YT){
+    var id=MP.cola[MP.i].videoId;
+    if(MP.player && MP.player.loadVideoById){ MP.player.loadVideoById(id); return; }
+    MP.player=new YT.Player('ytPlayer',{
+      host:'https://www.youtube-nocookie.com', width:'200', height:'200', videoId:id,
+      playerVars:{playsinline:1, rel:0, autoplay:1},
+      events:{
+        onReady:function(e){ try{ e.target.playVideo(); }catch(x){} },
+        onStateChange:function(e){ MP.estado=e.data; if(e.data===0){ if(MP.i<MP.cola.length-1) irCancion(MP.i+1); else { toast('Terminó la lista "'+MP.titulo+'".'); } } pintarReproductor(); },
+        onError:function(){ var s=MP.cola[MP.i]; toast('No se pudo reproducir "'+(s?s.titulo:'')+'". Paso a la siguiente.'); setTimeout(function(){ if(MP.i<MP.cola.length-1) irCancion(MP.i+1); }, 900); }
+      }
+    });
+  }).catch(function(){ toast('No se pudo cargar YouTube. Revise su conexión.'); cerrarReproductor(); });
+}
+function irCancion(i){
+  if(i<0 || i>=MP.cola.length) return;
+  MP.i=i; pintarReproductor();
+  if(MP.player && MP.player.loadVideoById) MP.player.loadVideoById(MP.cola[i].videoId);
+}
+function cerrarReproductor(){
+  try{ if(MP.player && MP.player.destroy) MP.player.destroy(); }catch(e){}
+  MP.player=null; MP.cola=[]; MP.estado='';
+  var c=$('#reproductor'); if(c) c.remove(); document.body.classList.remove('con-reproductor');
+  $$('[data-sonando]').forEach(function(e){ e.classList.remove('sonando'); });
+}
+function vMusica(el){
+  Reloj.tipo=null;
+  llamar('listasAlabanza').then(function(d){
+    S.alabanzas=d;
+    var html='<div class="row" style="margin-bottom:6px"><h1 class="grow">Alabanzas</h1>'+(d.puedeEditar?'<button class="btn primary" id="nuevaLista">+ Lista</button>':'')+'</div>'+
+      '<p class="small muted" style="margin:0 0 14px">Listas preparadas por el ministerio de alabanza. La música sigue sonando mientras usa el resto de la app, con la pantalla encendida.</p>';
+    if(!d.listas.length) html+='<div class="card empty">Todavía no hay listas de alabanzas.'+(d.puedeEditar?' Cree la primera con el botón de arriba.':'')+'</div>';
+    d.listas.forEach(function(l){
+      var abierta=MP.abierta===l.id;
+      html+='<div class="card"><div class="row"><div class="grow" style="cursor:pointer" data-abrir="'+l.id+'"><h2>'+esc(l.titulo)+'</h2><div class="tiny muted">'+l.canciones.length+' canci'+(l.canciones.length===1?'ón':'ones')+(l.descripcion?' · '+esc(l.descripcion):'')+'</div></div>'+
+        '<button class="btn primary sm" data-play="'+l.id+'"'+(l.canciones.length?'':' disabled')+'>▶ Reproducir</button>'+(d.puedeEditar?'<button class="btn ghost sm" data-editl="'+l.id+'" aria-label="Editar lista">⋯</button>':'')+'</div>';
+      if(abierta){
+        html+='<div class="list" style="margin-top:8px">'+l.canciones.map(function(c,i){
+          return '<div class="row cancion" data-sonando="'+c.id+'"><button class="btn ghost sm" data-pc="'+l.id+'|'+i+'" aria-label="Reproducir esta">▶</button><div class="grow" style="min-width:0"><div class="small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><b>'+esc(c.titulo)+'</b></div><div class="tiny muted">'+esc(c.autor||'')+'</div></div>'+
+            (d.puedeEditar?'<button class="btn ghost sm" data-mv="'+c.id+'|-1" aria-label="Subir"'+(i===0?' disabled':'')+'>↑</button><button class="btn ghost sm" data-mv="'+c.id+'|1" aria-label="Bajar"'+(i===l.canciones.length-1?' disabled':'')+'>↓</button><button class="btn ghost sm" data-qc="'+c.id+'" aria-label="Quitar">✕</button>':'')+'</div>';
+        }).join('')+'</div>'+(d.puedeEditar?'<button class="btn sm" style="margin-top:8px" data-agregar="'+l.id+'">+ Agregar canciones</button>':'');
+      }
+      html+='</div>';
+    });
+    el.innerHTML=html;
+    var lista=function(id){ return d.listas.filter(function(x){return x.id===id;})[0]; };
+    if($('#nuevaLista',el)) $('#nuevaLista',el).onclick=function(){ formLista(null); };
+    $$('[data-abrir]',el).forEach(function(b){ b.onclick=function(){ MP.abierta = MP.abierta===b.dataset.abrir? null : b.dataset.abrir; vMusica(el); }; });
+    $$('[data-play]',el).forEach(function(b){ b.onclick=function(){ MP.abierta=b.dataset.play; reproducirLista(lista(b.dataset.play),0); vMusica(el); }; });
+    $$('[data-pc]',el).forEach(function(b){ b.onclick=function(){ var p=b.dataset.pc.split('|'); reproducirLista(lista(p[0]), +p[1]); }; });
+    $$('[data-editl]',el).forEach(function(b){ b.onclick=function(){ formLista(lista(b.dataset.editl)); }; });
+    $$('[data-agregar]',el).forEach(function(b){ b.onclick=function(){ formCanciones(lista(b.dataset.agregar)); }; });
+    $$('[data-mv]',el).forEach(function(b){ b.onclick=function(){ var p=b.dataset.mv.split('|'); b.disabled=true; llamar('editarCancion',{id:p[0],mover:+p[1]}).then(function(){ vMusica(el); }).catch(err); }; });
+    $$('[data-qc]',el).forEach(function(b){ b.onclick=function(){ if(confirm('¿Quitar esta canción de la lista?')) llamar('editarCancion',{id:b.dataset.qc,quitar:true}).then(function(){ vMusica(el); }).catch(err); }; });
+    if(MP.cola.length) pintarReproductor();
+  }).catch(function(e){ el.innerHTML='<div class="empty">'+esc(e.message)+'</div>'; });
+}
+function formLista(l){
+  var m=modal('<div class="row" style="margin-bottom:8px"><h2 class="grow">'+(l?'Editar lista':'Nueva lista')+'</h2><button class="btn ghost" data-cerrar>Cerrar</button></div>'+
+    '<form id="fl2"><label class="f"><span>Nombre</span><input type="text" name="t" required maxlength="100" value="'+esc(l?l.titulo:'')+'" placeholder="ej. Alabanzas del domingo"></label>'+
+    '<label class="f"><span>Descripción (opcional)</span><input type="text" name="d" maxlength="500" value="'+esc(l?l.descripcion:'')+'"></label>'+
+    (l?'':'<label class="f"><span>Enlaces de YouTube (opcional, uno por línea)</span><textarea name="e" placeholder="https://youtu.be/..."></textarea></label>')+
+    '<div class="row">'+(l?'<button type="button" class="btn danger" id="borrarL">Eliminar lista</button>':'')+'<span class="grow"></span><button class="btn primary">Guardar</button></div><p class="small muted" id="estL"></p></form>');
+  var f=$('#fl2',m);
+  f.onsubmit=function(ev){ ev.preventDefault(); var b=$('button.primary',f); b.disabled=true;
+    llamar('guardarListaAlabanza',{id:l&&l.id,titulo:f.t.value,descripcion:f.d.value}).then(function(id){
+      if(!l && f.e && f.e.value.trim()){ $('#estL',m).textContent='Agregando canciones…'; return llamar('agregarCanciones',{listaId:id,enlaces:f.e.value}).then(function(r){ MP.abierta=id; avisoCanciones(r); }); }
+      MP.abierta=l?l.id:id;
+    }).then(function(){ m.remove(); ir('musica'); }).catch(function(e){ b.disabled=false; $('#estL',m).textContent=''; err(e); }); };
+  if(l) $('#borrarL',m).onclick=function(){ if(confirm('¿Eliminar la lista "'+l.titulo+'"?')) llamar('guardarListaAlabanza',{id:l.id,eliminar:true}).then(function(){ m.remove(); ir('musica'); }).catch(err); };
+}
+function formCanciones(l){
+  var m=modal('<div class="row" style="margin-bottom:8px"><h2 class="grow">Agregar a "'+esc(l.titulo)+'"</h2><button class="btn ghost" data-cerrar>Cerrar</button></div>'+
+    '<p class="small muted" style="margin-top:0">En YouTube toque <b>Compartir → Copiar enlace</b> y péguelo aquí. Puede pegar varios, uno por línea.</p>'+
+    '<form id="fc2"><textarea name="e" required placeholder="https://youtu.be/..." style="min-height:120px"></textarea><button class="btn primary block" style="margin-top:8px">Agregar</button><p class="small muted" id="estC"></p></form>');
+  var f=$('#fc2',m);
+  f.onsubmit=function(ev){ ev.preventDefault(); var b=$('button',f); b.disabled=true; $('#estC',m).textContent='Buscando las canciones en YouTube…';
+    llamar('agregarCanciones',{listaId:l.id,enlaces:f.e.value}).then(function(r){ m.remove(); MP.abierta=l.id; avisoCanciones(r); ir('musica'); })
+    .catch(function(e){ b.disabled=false; $('#estC',m).textContent=''; err(e); }); };
+}
+function avisoCanciones(r){
+  if(!r.fallidas.length){ toast(r.agregadas+' canci'+(r.agregadas===1?'ón agregada':'ones agregadas')+'.'); return; }
+  modal('<h2>Canciones agregadas: '+r.agregadas+'</h2><p class="small">Estas no se pudieron agregar:</p><div class="list">'+r.fallidas.map(function(f){ return '<div class="small"><b style="word-break:break-all">'+esc(f.enlace)+'</b><div class="tiny muted">'+esc(f.motivo)+'</div></div>'; }).join('')+'</div><button class="btn primary block" data-cerrar style="margin-top:10px">Entendido</button>');
+}
+
+// ─────────────────────────── Ajustes: Firebase ───────────────────────────
+function pintarAjustesFirebase(c, a){
+  if(!c) return;
+  c.innerHTML='<div class="card"><h2>Chat (Firebase)</h2>'+
+    (a.firebase?'<p class="small">Conectado al proyecto <b>'+esc(a.firebase)+'</b>. <button class="link small" id="quitarFB">Desconectar</button></p><div class="row wrap2" style="gap:8px"><button class="btn primary" id="probarFB">Probar seguridad del chat</button></div><div id="resFB"></div>'
+      :'<p class="small">Para activar el chat y ver quién está en línea, cree un proyecto gratuito en <b>console.firebase.google.com</b> con la cuenta de la iglesia y pegue aquí los dos datos que le indique el instructivo.</p>')+
+    '<details'+(a.firebase?'':' open')+' style="margin-top:10px"><summary class="small" style="cursor:pointer">'+(a.firebase?'Cambiar configuración':'Pegar configuración')+'</summary>'+
+    '<form id="ffb"><label class="f"><span>1. Configuración de la app web (bloque firebaseConfig)</span><textarea name="c" required placeholder="const firebaseConfig = { apiKey: ..., databaseURL: ..., ... };" style="min-height:110px;font-family:ui-monospace,monospace;font-size:12px"></textarea></label>'+
+    '<label class="f"><span>Dirección de la Realtime Database (solo si no viene en el bloque anterior)</span><input type="text" name="u" placeholder="https://....firebaseio.com"></label>'+
+    '<label class="f"><span>2. Clave de la cuenta de servicio (contenido del archivo JSON)</span><textarea name="k" required placeholder="{ &quot;type&quot;: &quot;service_account&quot;, ... }" style="min-height:110px;font-family:ui-monospace,monospace;font-size:12px"></textarea></label>'+
+    '<button class="btn primary">Guardar y activar el chat</button><p class="small muted" id="estFB"></p></form></details></div>';
+  var f=$('#ffb',c);
+  f.onsubmit=function(ev){ ev.preventDefault(); var b=$('button.primary',f); b.disabled=true; $('#estFB',c).textContent='Instalando las reglas de seguridad…';
+    llamar('guardarFirebase',{config:f.c.value,databaseURL:f.u.value,cuenta:f.k.value}).then(function(r){ f.reset(); toast('Chat activado en el proyecto '+r.proyecto+'.'); desconectarChat(); ir('admin',{tab:'ajustes'}); })
+    .catch(function(e){ b.disabled=false; $('#estFB',c).textContent=''; err(e); }); };
+  if($('#quitarFB',c)) $('#quitarFB',c).onclick=function(){ if(confirm('¿Desconectar el chat? Los mensajes quedan guardados en Firebase.')) llamar('guardarFirebase',{quitar:true}).then(function(){ desconectarChat(); ir('admin',{tab:'ajustes'}); }).catch(err); };
+  if($('#probarFB',c)) $('#probarFB',c).onclick=function(){ var b=this; b.disabled=true; $('#resFB',c).innerHTML='<p class="small muted">Probando con usuarios ficticios… (unos segundos)</p>';
+    llamar('probarChat').then(function(r){ b.disabled=false;
+      $('#resFB',c).innerHTML='<p class="small" style="margin-bottom:4px"><b style="color:'+(r.aprobadas===r.total?'var(--ok)':'var(--bad)')+'">'+r.aprobadas+' de '+r.total+' pruebas correctas</b></p><div class="list">'+r.casos.map(function(x){ return '<div class="tiny">'+(x.ok?'✓':'✗')+' '+esc(x.prueba)+' — '+(x.obtenido?'permitido':'bloqueado')+'</div>'; }).join('')+'</div>';
+    }).catch(function(e){ b.disabled=false; $('#resFB',c).innerHTML=''; err(e); }); };
+}
+
 arrancar();
+if('serviceWorker' in navigator && location.protocol==='https:'){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
 </script>
 </body>
 </html>
